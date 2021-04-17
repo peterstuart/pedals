@@ -49,7 +49,6 @@ pub fn run(mut pipeline: Pipeline) -> Result<()> {
     let output_stream = output_device.build_output_stream(&config, output_data_fn, handle_error)?;
     println!("Successfully built streams.");
 
-    // Play the streams.
     println!(
         "Starting the input and output streams with {} milliseconds of latency.",
         LATENCY
