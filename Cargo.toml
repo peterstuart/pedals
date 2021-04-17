@@ -5,3 +5,14 @@ authors = ["Peter Stuart <peter@peterstuart.org>"]
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0.40"
+cpal = "0.13.3"
+ringbuf = "0.2.4"
+
+[lib]
+name = "pedals"
+path = "src/lib.rs"
+
+[[bin]]
+name = "pdeals"
+path = "src/main.rs"
