@@ -14,5 +14,5 @@ name = "pedals"
 path = "src/lib.rs"
 
 [[bin]]
-name = "pdeals"
+name = "pedals"
 path = "src/main.rs"
