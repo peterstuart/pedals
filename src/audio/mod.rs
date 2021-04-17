@@ -68,12 +68,12 @@ fn devices() -> Result<(Device, Device)> {
     let host = cpal::default_host();
     let input_device = host
         .default_input_device()
-        .ok_or(anyhow!("Failed to find input device"))?;
+        .ok_or_else(|| anyhow!("Failed to find input device"))?;
     println!("Input device: {}", input_device.name()?);
 
     let output_device = host
         .default_output_device()
-        .ok_or(anyhow!("Failed to find output device"))?;
+        .ok_or_else(|| anyhow!("Failed to find output device"))?;
     println!("Output device {}", output_device.name()?);
 
     Ok((input_device, output_device))
@@ -95,8 +95,8 @@ fn read_frame(consumer: &mut Consumer<f32>, size: usize) -> (Vec<f32>, bool) {
     let mut frame = vec![0.0; size];
     let mut fell_behind = false;
 
-    for i in 0..size {
-        frame[i] = match consumer.pop() {
+    for sample in frame.iter_mut() {
+        *sample = match consumer.pop() {
             Some(s) => s,
             None => {
                 fell_behind = true;

@@ -18,3 +18,9 @@ impl Pedal for Transparent {
         output.copy_from_slice(input)
     }
 }
+
+impl Default for Transparent {
+    fn default() -> Self {
+        Self::new()
+    }
+}
