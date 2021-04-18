@@ -1,6 +1,9 @@
 mod delay;
 mod transparent;
 
+pub mod config;
+
+pub use config::Config;
 pub use delay::Delay;
 pub use transparent::Transparent;
 

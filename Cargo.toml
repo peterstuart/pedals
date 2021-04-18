@@ -8,6 +8,8 @@ edition = "2018"
 anyhow = "1.0.40"
 cpal = "0.13.3"
 ringbuf = "0.2.4"
+serde = { version = "1.0.125", features = ["derive"] }
+serde_yaml = "0.8.17"
 
 [lib]
 name = "pedals"

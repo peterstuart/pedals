@@ -22,7 +22,16 @@ cargo test
 
 ## Running
 
+Create a configuration file for the pipeline:
+
+```yaml
+pedals:
+  - type: Delay
+    delay_ms: 1000
+    level: 0.5
+```
+
 ```shell
-cargo run
+cargo run -- pipeline.yml
 ```
 

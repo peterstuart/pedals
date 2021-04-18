@@ -1,3 +1,4 @@
+use super::config::DelayConfig;
 use crate::{ring_buffer, Pedal, Result};
 use cpal::StreamConfig;
 use ringbuf::{Consumer, Producer, RingBuffer};
@@ -9,9 +10,10 @@ pub struct Delay {
 }
 
 impl Delay {
-    pub fn new(config: &StreamConfig, delay_ms: f32, level: f32) -> Result<Self> {
-        let delay_num_frames = (delay_ms / 1_000.0) * config.sample_rate.0 as f32;
-        let delay_num_samples = delay_num_frames as usize * config.channels as usize;
+    pub fn new(stream_config: &StreamConfig, delay_config: &DelayConfig) -> Result<Self> {
+        let delay_num_frames =
+            (delay_config.delay_ms as f32 / 1_000.0) * stream_config.sample_rate.0 as f32;
+        let delay_num_samples = delay_num_frames as usize * stream_config.channels as usize;
 
         let ring = RingBuffer::new(delay_num_samples * 2);
         let (mut producer, consumer) = ring.split();
@@ -19,7 +21,7 @@ impl Delay {
         ring_buffer::write_empty_samples(&mut producer, delay_num_samples)?;
 
         Ok(Self {
-            level,
+            level: delay_config.level,
             producer,
             consumer,
         })

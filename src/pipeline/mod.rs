@@ -1,14 +1,23 @@
 use std::fmt::Display;
 
-use crate::{pedal, Result};
+use crate::{
+    pedal::{self, Config},
+    Result,
+};
 use anyhow::anyhow;
+use cpal::StreamConfig;
 
 pub struct Pipeline {
     pedals: Vec<pedal::Boxed>,
 }
 
 impl Pipeline {
-    pub fn new(pedals: Vec<pedal::Boxed>) -> Result<Self> {
+    pub fn from(config: &Config, stream_config: &StreamConfig) -> Result<Self> {
+        let pedals = config.to_pedals(stream_config)?;
+        Pipeline::new(pedals)
+    }
+
+    fn new(pedals: Vec<pedal::Boxed>) -> Result<Self> {
         if pedals.is_empty() {
             Err(anyhow!("Must have at least one pedal in the pipeline"))
         } else {
