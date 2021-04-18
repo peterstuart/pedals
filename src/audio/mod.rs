@@ -1,44 +1,41 @@
-use crate::{Pipeline, Result};
+use crate::{ring_buffer, Pipeline, Result};
 use anyhow::anyhow;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Device,
+    Device, StreamConfig,
 };
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::RingBuffer;
 use std::time::Duration;
 
 const LATENCY: f32 = 20.0;
 
-pub fn run(mut pipeline: Pipeline) -> Result<()> {
-    let (input_device, output_device) = devices()?;
-
-    let config: cpal::StreamConfig = input_device.default_input_config()?.into();
-
+pub fn run(
+    input_device: &Device,
+    output_device: &Device,
+    config: &StreamConfig,
+    mut pipeline: Pipeline,
+) -> Result<()> {
     let latency_num_frames = (LATENCY / 1_000.0) * config.sample_rate.0 as f32;
     let latency_num_samples = latency_num_frames as usize * config.channels as usize;
 
     let ring = RingBuffer::new(latency_num_samples * 2);
     let (mut producer, mut consumer) = ring.split();
 
-    for _ in 0..latency_num_samples {
-        producer.push(0.0).unwrap();
-    }
+    ring_buffer::write_empty_samples(&mut producer, latency_num_samples)?;
 
     let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
-        let output_fell_behind = write_frame(&mut producer, data);
-
-        if output_fell_behind {
-            eprintln!("output stream fell behind: try increasing latency");
+        if let Err(e) = ring_buffer::write_frame(&mut producer, data) {
+            eprintln!("input: {:?}", e);
         }
     };
 
     let output_data_fn = move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
-        let (frame, input_fell_behind) = read_frame(&mut consumer, output.len());
-        pipeline.process(&frame, output);
+        let result = ring_buffer::read_frame(&mut consumer, output.len())
+            .and_then(|frame| pipeline.process(&frame, output));
 
-        if input_fell_behind {
-            eprintln!("input stream fell behind: try increasing latency");
-        }
+        if let Err(e) = result {
+            eprintln!("output: {:?}", e);
+        };
     };
 
     println!(
@@ -64,7 +61,7 @@ pub fn run(mut pipeline: Pipeline) -> Result<()> {
     Ok(())
 }
 
-fn devices() -> Result<(Device, Device)> {
+pub fn devices() -> Result<(Device, Device)> {
     let host = cpal::default_host();
     let input_device = host
         .default_input_device()
@@ -79,33 +76,8 @@ fn devices() -> Result<(Device, Device)> {
     Ok((input_device, output_device))
 }
 
-fn write_frame(producer: &mut Producer<f32>, data: &[f32]) -> bool {
-    let mut fell_behind = false;
-
-    for &sample in data {
-        if producer.push(sample).is_err() {
-            fell_behind = true;
-        }
-    }
-
-    fell_behind
-}
-
-fn read_frame(consumer: &mut Consumer<f32>, size: usize) -> (Vec<f32>, bool) {
-    let mut frame = vec![0.0; size];
-    let mut fell_behind = false;
-
-    for sample in frame.iter_mut() {
-        *sample = match consumer.pop() {
-            Some(s) => s,
-            None => {
-                fell_behind = true;
-                0.0
-            }
-        };
-    }
-
-    (frame, fell_behind)
+pub fn config(device: &Device) -> Result<StreamConfig> {
+    Ok(device.default_input_config()?.into())
 }
 
 fn handle_error(error: cpal::StreamError) {

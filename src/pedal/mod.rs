@@ -1,15 +1,18 @@
+mod delay;
 mod transparent;
 
+pub use delay::Delay;
 pub use transparent::Transparent;
 
-use std::fmt::{Debug, Display};
+use crate::Result;
+use std::fmt::Display;
 
 pub type Boxed = Box<dyn Pedal>;
 
-pub trait Pedal: Debug + Send + Sync {
+pub trait Pedal: Send + Sync {
     fn name(&self) -> String;
 
-    fn process(&mut self, input: &[f32], output: &mut [f32]);
+    fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()>;
 
     fn boxed(self) -> Boxed
     where
