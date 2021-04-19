@@ -10,13 +10,13 @@ pub struct Delay {
 
 impl Delay {
     pub fn new(config: &StreamConfig, delay_ms: f32, level: f32) -> Result<Self> {
-        let delay_frames = (delay_ms / 1_000.0) * config.sample_rate.0 as f32;
-        let delay_samples = delay_frames as usize * config.channels as usize;
+        let delay_num_frames = (delay_ms / 1_000.0) * config.sample_rate.0 as f32;
+        let delay_num_samples = delay_num_frames as usize * config.channels as usize;
 
-        let ring = RingBuffer::new(delay_samples * 2);
+        let ring = RingBuffer::new(delay_num_samples * 2);
         let (mut producer, consumer) = ring.split();
 
-        ring_buffer::write_empty_samples(&mut producer, delay_samples)?;
+        ring_buffer::write_empty_samples(&mut producer, delay_num_samples)?;
 
         Ok(Self {
             level,
