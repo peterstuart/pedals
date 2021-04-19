@@ -14,13 +14,13 @@ pub fn run(mut pipeline: Pipeline) -> Result<()> {
 
     let config: cpal::StreamConfig = input_device.default_input_config()?.into();
 
-    let latency_frames = (LATENCY / 1_000.0) * config.sample_rate.0 as f32;
-    let latency_samples = latency_frames as usize * config.channels as usize;
+    let latency_num_frames = (LATENCY / 1_000.0) * config.sample_rate.0 as f32;
+    let latency_num_samples = latency_num_frames as usize * config.channels as usize;
 
-    let ring = RingBuffer::new(latency_samples * 2);
+    let ring = RingBuffer::new(latency_num_samples * 2);
     let (mut producer, mut consumer) = ring.split();
 
-    for _ in 0..latency_samples {
+    for _ in 0..latency_num_samples {
         producer.push(0.0).unwrap();
     }
 
