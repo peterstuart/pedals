@@ -1,10 +1,12 @@
 mod delay;
+mod split;
 mod transparent;
 
 pub mod config;
 
 pub use config::Config;
 pub use delay::Delay;
+pub use split::Split;
 pub use transparent::Transparent;
 
 use crate::Result;

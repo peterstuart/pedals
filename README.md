@@ -27,8 +27,9 @@ Create a configuration file for the pipeline:
 ```yaml
 pedals:
   - type: Delay
-    delay_ms: 1000
+    delay_ms: 250
     level: 0.5
+    num: 6
 ```
 
 ```shell
