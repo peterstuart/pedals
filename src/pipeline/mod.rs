@@ -3,7 +3,6 @@ use std::fmt::Display;
 use crate::{pedal, Result};
 use anyhow::anyhow;
 
-#[derive(Debug)]
 pub struct Pipeline {
     pedals: Vec<pedal::Boxed>,
 }
@@ -17,13 +16,15 @@ impl Pipeline {
         }
     }
 
-    pub fn process(&mut self, input: &[f32], output: &mut [f32]) {
+    pub fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
         let mut input = input.to_vec();
 
         for pedal in &mut self.pedals {
-            pedal.process(&input, output);
+            pedal.process(&input, output)?;
             input.copy_from_slice(output);
         }
+
+        Ok(())
     }
 }
 

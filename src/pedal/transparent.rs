@@ -1,4 +1,4 @@
-use crate::Pedal;
+use crate::{Pedal, Result};
 
 #[derive(Debug)]
 pub struct Transparent {}
@@ -14,8 +14,9 @@ impl Pedal for Transparent {
         "Transparent".into()
     }
 
-    fn process(&mut self, input: &[f32], output: &mut [f32]) {
-        output.copy_from_slice(input)
+    fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
+        output.copy_from_slice(input);
+        Ok(())
     }
 }
 
