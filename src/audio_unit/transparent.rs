@@ -1,4 +1,4 @@
-use crate::{Pedal, Result};
+use crate::{AudioUnit, Result};
 
 #[derive(Debug)]
 pub struct Transparent {}
@@ -9,7 +9,7 @@ impl Transparent {
     }
 }
 
-impl Pedal for Transparent {
+impl AudioUnit for Transparent {
     fn name(&self) -> String {
         "Transparent".into()
     }

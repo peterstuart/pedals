@@ -1,4 +1,4 @@
-use crate::{ring_buffer, Pedal, Result};
+use crate::{ring_buffer, AudioUnit, Result};
 use cpal::StreamConfig;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
@@ -26,7 +26,7 @@ impl Delay {
     }
 }
 
-impl Pedal for Delay {
+impl AudioUnit for Delay {
     fn name(&self) -> String {
         "Delay".into()
     }

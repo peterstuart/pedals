@@ -25,7 +25,7 @@ cargo test
 Create a configuration file for the pipeline:
 
 ```yaml
-pedals:
+effects:
   - type: Delay
     delay_ms: 250
     level: 0.5

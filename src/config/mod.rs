@@ -1,13 +1,13 @@
 mod effect;
 
-use crate::{pedal, Result};
+use crate::{audio_unit, Result};
 use cpal::StreamConfig;
 use effect::Effect;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pedals: Vec<Effect>,
+    effects: Vec<Effect>,
 }
 
 impl Config {
@@ -17,14 +17,14 @@ impl Config {
 
     pub fn default() -> Self {
         Self {
-            pedals: vec![Effect::Transparent],
+            effects: vec![Effect::Transparent],
         }
     }
 
-    pub fn to_pedals(&self, stream_config: &StreamConfig) -> Result<Vec<pedal::Boxed>> {
-        self.pedals
+    pub fn to_audio_units(&self, stream_config: &StreamConfig) -> Result<Vec<audio_unit::Boxed>> {
+        self.effects
             .iter()
-            .map(|pedal| pedal.to_pedal(stream_config))
+            .map(|audio_unit| audio_unit.to_audio_unit(stream_config))
             .collect()
     }
 }

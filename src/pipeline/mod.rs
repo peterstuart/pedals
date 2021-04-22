@@ -1,32 +1,32 @@
 use std::fmt::Display;
 
-use crate::{pedal, Config, Result};
+use crate::{audio_unit, Config, Result};
 use anyhow::anyhow;
 use cpal::StreamConfig;
 
 pub struct Pipeline {
-    pedals: Vec<pedal::Boxed>,
+    audio_units: Vec<audio_unit::Boxed>,
 }
 
 impl Pipeline {
     pub fn from(config: &Config, stream_config: &StreamConfig) -> Result<Self> {
-        let pedals = config.to_pedals(stream_config)?;
-        Pipeline::new(pedals)
+        let audio_units = config.to_audio_units(stream_config)?;
+        Pipeline::new(audio_units)
     }
 
-    fn new(pedals: Vec<pedal::Boxed>) -> Result<Self> {
-        if pedals.is_empty() {
-            Err(anyhow!("Must have at least one pedal in the pipeline"))
+    fn new(audio_units: Vec<audio_unit::Boxed>) -> Result<Self> {
+        if audio_units.is_empty() {
+            Err(anyhow!("Must have at least one audio unit in the pipeline"))
         } else {
-            Ok(Self { pedals })
+            Ok(Self { audio_units })
         }
     }
 
     pub fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
         let mut input = input.to_vec();
 
-        for pedal in &mut self.pedals {
-            pedal.process(&input, output)?;
+        for audio_unit in &mut self.audio_units {
+            audio_unit.process(&input, output)?;
             input.copy_from_slice(output);
         }
 
@@ -36,7 +36,11 @@ impl Pipeline {
 
 impl Display for Pipeline {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut names: Vec<_> = self.pedals.iter().map(|pedal| pedal.name()).collect();
+        let mut names: Vec<_> = self
+            .audio_units
+            .iter()
+            .map(|audio_unit| audio_unit.name())
+            .collect();
         names.insert(0, "Input".into());
         names.insert(names.len(), "Output".into());
 

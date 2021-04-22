@@ -1,6 +1,5 @@
-use std::{env, fs};
-
 use pedals::{audio, Config, Pipeline, Result};
+use std::{env, fs};
 
 fn main() -> Result<()> {
     let config = config()?;

@@ -1,4 +1,4 @@
-use crate::{pedal, Pedal, Result};
+use crate::{audio_unit, AudioUnit, Result};
 use cpal::StreamConfig;
 use serde::Deserialize;
 use Effect::*;
@@ -11,10 +11,10 @@ pub enum Effect {
 }
 
 impl Effect {
-    pub fn to_pedal(&self, stream_config: &StreamConfig) -> Result<pedal::Boxed> {
+    pub fn to_audio_unit(&self, stream_config: &StreamConfig) -> Result<audio_unit::Boxed> {
         Ok(match self {
-            Transparent => pedal::Transparent::new().boxed(),
-            Delay(delay_config) => delay_config.to_pedal(stream_config)?,
+            Transparent => audio_unit::Transparent::new().boxed(),
+            Delay(delay_config) => delay_config.to_audio_unit(stream_config)?,
         })
     }
 }
@@ -27,19 +27,21 @@ pub struct DelayConfig {
 }
 
 impl DelayConfig {
-    fn to_pedal(&self, stream_config: &StreamConfig) -> Result<pedal::Boxed> {
-        let mut pedals = (1..=self.num)
+    fn to_audio_unit(&self, stream_config: &StreamConfig) -> Result<audio_unit::Boxed> {
+        let mut audio_units = (1..=self.num)
             .map(|n| {
-                Ok(
-                    pedal::Delay::new(stream_config, self.level.powi(n as i32), self.delay_ms * n)?
-                        .boxed(),
-                )
+                Ok(audio_unit::Delay::new(
+                    stream_config,
+                    self.level.powi(n as i32),
+                    self.delay_ms * n,
+                )?
+                .boxed())
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let transparent = pedal::Transparent::new().boxed();
-        pedals.insert(0, transparent);
+        let transparent = audio_unit::Transparent::new().boxed();
+        audio_units.insert(0, transparent);
 
-        Ok(pedal::Split::new(pedals)?.boxed())
+        Ok(audio_unit::Split::new(audio_units)?.boxed())
     }
 }
