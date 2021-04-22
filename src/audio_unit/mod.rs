@@ -1,8 +1,10 @@
 mod delay;
+mod pipeline;
 mod split;
 mod transparent;
 
 pub use delay::Delay;
+pub use pipeline::Pipeline;
 pub use split::Split;
 pub use transparent::Transparent;
 
