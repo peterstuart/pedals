@@ -10,10 +10,6 @@ impl Transparent {
 }
 
 impl AudioUnit for Transparent {
-    fn name(&self) -> String {
-        "Transparent".into()
-    }
-
     fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
         output.copy_from_slice(input);
         Ok(())

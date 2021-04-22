@@ -16,10 +16,6 @@ impl Split {
 }
 
 impl AudioUnit for Split {
-    fn name(&self) -> String {
-        "Split".into()
-    }
-
     fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
         let length = output.len();
         util::zero_slice(output);

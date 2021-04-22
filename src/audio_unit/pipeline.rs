@@ -1,6 +1,4 @@
-use std::fmt::Display;
-
-use crate::{audio_unit, Config, Result};
+use crate::{audio_unit, AudioUnit, Config, Result};
 use anyhow::anyhow;
 use cpal::StreamConfig;
 
@@ -14,7 +12,7 @@ impl Pipeline {
         Pipeline::new(audio_units)
     }
 
-    fn new(audio_units: Vec<audio_unit::Boxed>) -> Result<Self> {
+    pub fn new(audio_units: Vec<audio_unit::Boxed>) -> Result<Self> {
         if audio_units.is_empty() {
             Err(anyhow!("Must have at least one audio unit in the pipeline"))
         } else {
@@ -34,16 +32,8 @@ impl Pipeline {
     }
 }
 
-impl Display for Pipeline {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut names: Vec<_> = self
-            .audio_units
-            .iter()
-            .map(|audio_unit| audio_unit.name())
-            .collect();
-        names.insert(0, "Input".into());
-        names.insert(names.len(), "Output".into());
-
-        names.join(" -> ").fmt(f)
+impl AudioUnit for Pipeline {
+    fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
+        self.process(input, output)
     }
 }

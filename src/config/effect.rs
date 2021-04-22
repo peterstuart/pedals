@@ -1,4 +1,4 @@
-use crate::{audio_unit, AudioUnit, Result};
+use crate::{audio_unit, AudioUnit, Pipeline, Result};
 use cpal::StreamConfig;
 use serde::Deserialize;
 use Effect::*;
@@ -7,7 +7,7 @@ use Effect::*;
 #[serde(tag = "type")]
 pub enum Effect {
     Transparent,
-    Delay(DelayConfig),
+    Delay(Delay),
 }
 
 impl Effect {
@@ -20,21 +20,20 @@ impl Effect {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct DelayConfig {
+pub struct Delay {
     level: f32,
     delay_ms: u32,
     num: u32,
 }
 
-impl DelayConfig {
+impl Delay {
     fn to_audio_unit(&self, stream_config: &StreamConfig) -> Result<audio_unit::Boxed> {
         let mut audio_units = (1..=self.num)
             .map(|n| {
-                Ok(audio_unit::Delay::new(
-                    stream_config,
-                    self.level.powi(n as i32),
-                    self.delay_ms * n,
-                )?
+                Ok(Pipeline::new(vec![
+                    audio_unit::Delay::new(stream_config, self.delay_ms * n)?.boxed(),
+                    audio_unit::Gain::new(self.level.powi(n as i32)).boxed(),
+                ])?
                 .boxed())
             })
             .collect::<Result<Vec<_>>>()?;
