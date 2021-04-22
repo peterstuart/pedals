@@ -25,5 +25,5 @@ fn config_from_path(path: &str) -> Result<Config> {
     println!("Reading config from {}", path);
 
     let contents = fs::read_to_string(path)?;
-    Ok(serde_yaml::from_str(&contents)?)
+    Config::from(&contents)
 }
