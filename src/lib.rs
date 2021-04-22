@@ -1,10 +1,11 @@
 pub mod audio;
-pub mod pedal;
+pub mod audio_unit;
 pub mod ring_buffer;
 
-mod pipeline;
+mod config;
 mod result;
+mod util;
 
-pub use pedal::Pedal;
-pub use pipeline::Pipeline;
+pub use audio_unit::{AudioUnit, Pipeline};
+pub use config::Config;
 pub use result::Result;
