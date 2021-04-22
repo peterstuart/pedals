@@ -1,9 +1,6 @@
 use std::fmt::Display;
 
-use crate::{
-    pedal::{self, Config},
-    Result,
-};
+use crate::{pedal, Config, Result};
 use anyhow::anyhow;
 use cpal::StreamConfig;
 
