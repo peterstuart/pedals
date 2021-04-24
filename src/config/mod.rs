@@ -1,13 +1,16 @@
 mod effect;
+mod midi;
 
 use crate::{audio_unit, Result};
 use cpal::StreamConfig;
 use effect::Effect;
+use midi::Midi;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    effects: Vec<Effect>,
+    pub midi: Option<Midi>,
+    pub effects: Vec<Effect>,
 }
 
 impl Config {
@@ -17,6 +20,7 @@ impl Config {
 
     pub fn default() -> Self {
         Self {
+            midi: None,
             effects: vec![Effect::Transparent],
         }
     }
@@ -24,7 +28,7 @@ impl Config {
     pub fn to_audio_units(&self, stream_config: &StreamConfig) -> Result<Vec<audio_unit::Boxed>> {
         self.effects
             .iter()
-            .map(|audio_unit| audio_unit.to_audio_unit(stream_config))
+            .map(|audio_unit| audio_unit.to_audio_unit(&self.midi, stream_config))
             .collect()
     }
 }

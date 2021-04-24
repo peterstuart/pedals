@@ -7,9 +7,12 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.40"
 cpal = "0.13.3"
+midir = "0.7.0"
+num-traits = "0.2.14"
 ringbuf = "0.2.4"
 serde = { version = "1.0.125", features = ["derive"] }
 serde_yaml = "0.8.17"
+wmidi = "4.0.4"
 
 [lib]
 name = "pedals"

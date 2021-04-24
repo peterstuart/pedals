@@ -1,6 +1,11 @@
-use crate::{audio_unit, AudioUnit, Pipeline, Result};
+use crate::{
+    audio::midi,
+    audio_unit::{self, delay::DelayMs},
+    config, AudioUnit, Pipeline, Result,
+};
 use cpal::StreamConfig;
 use serde::Deserialize;
+use wmidi::{Channel, ControlFunction, MidiMessage};
 use Effect::*;
 
 #[derive(Debug, Deserialize)]
@@ -11,10 +16,14 @@ pub enum Effect {
 }
 
 impl Effect {
-    pub fn to_audio_unit(&self, stream_config: &StreamConfig) -> Result<audio_unit::Boxed> {
+    pub fn to_audio_unit(
+        &self,
+        midi_config: &Option<config::Midi>,
+        stream_config: &StreamConfig,
+    ) -> Result<audio_unit::Boxed> {
         Ok(match self {
             Transparent => audio_unit::Transparent::new().boxed(),
-            Delay(delay_config) => delay_config.to_audio_unit(stream_config)?,
+            Delay(delay_config) => delay_config.to_audio_unit(midi_config, stream_config)?,
         })
     }
 }
@@ -27,20 +36,56 @@ pub struct Delay {
 }
 
 impl Delay {
-    fn to_audio_unit(&self, stream_config: &StreamConfig) -> Result<audio_unit::Boxed> {
+    fn to_audio_unit(
+        &self,
+        midi_config: &Option<config::Midi>,
+        stream_config: &StreamConfig,
+    ) -> Result<audio_unit::Boxed> {
+        let num = self.num;
+        let channel = match midi_config {
+            Some(midi_config) => midi_config.channel()?,
+            None => Channel::Ch1,
+        };
+
         let mut audio_units = (1..=self.num)
             .map(|n| {
-                Ok(Pipeline::new(vec![
-                    audio_unit::Delay::new(stream_config, self.delay_ms * n)?.boxed(),
-                    audio_unit::Gain::new(self.level.powi(n as i32)).boxed(),
-                ])?
-                .boxed())
+                let delay_unit = audio_unit::Delay::new(
+                    stream_config,
+                    Box::new(move |messages| Self::handle_midi_messages(channel, n, num, messages)),
+                    self.delay_ms * n,
+                )?
+                .boxed();
+                let gain_unit = audio_unit::Gain::new(self.level.powi(n as i32)).boxed();
+                let pipeline = Pipeline::new(vec![delay_unit, gain_unit])?.boxed();
+
+                Ok(pipeline)
             })
             .collect::<Result<Vec<_>>>()?;
 
         let transparent = audio_unit::Transparent::new().boxed();
         audio_units.insert(0, transparent);
 
-        Ok(audio_unit::Split::new(audio_units)?.boxed())
+        let split = audio_unit::Split::new(audio_units)?.boxed();
+
+        Ok(split)
+    }
+
+    fn handle_midi_messages(
+        channel: Channel,
+        index: u32,
+        num_delays: u32,
+        messages: &[MidiMessage<'static>],
+    ) -> Option<DelayMs> {
+        let control_value =
+            midi::latest_control_value(messages, channel, ControlFunction::MODULATION_WHEEL)?;
+
+        let new_value = midi::control_value_in_range(
+            audio_unit::Delay::MIN_DELAY_MS,
+            audio_unit::Delay::MAX_DELAY_MS / num_delays,
+            control_value,
+        ) * index;
+
+        println!("new value: {}", new_value);
+        Some(new_value)
     }
 }

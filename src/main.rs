@@ -1,3 +1,4 @@
+use audio::midi;
 use pedals::{audio, Config, Pipeline, Result};
 use std::{env, fs};
 
@@ -7,7 +8,22 @@ fn main() -> Result<()> {
     let stream_config = audio::config(&input_device)?;
     let pipeline = Pipeline::from(&config, &stream_config)?;
 
-    audio::run(&input_device, &output_device, &stream_config, pipeline)
+    let midi_port_names = midi::port_names()?;
+
+    if config.midi.is_none() && !midi_port_names.is_empty() {
+        println!(
+            "Config is missing 'midi'. Available MIDI ports are:\n{}",
+            midi_port_names.join("\n")
+        );
+    }
+
+    audio::run(
+        &input_device,
+        &output_device,
+        &stream_config,
+        config.midi.map(|midi| midi.port),
+        pipeline,
+    )
 }
 
 fn config() -> Result<Config> {
