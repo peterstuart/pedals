@@ -25,6 +25,11 @@ cargo test
 Create a configuration file for the pipeline:
 
 ```yaml
+# omit "audio" to use the defaults
+# all fields in "audio" are optional
+audio:
+  input: # put any string here to have pedals show you a list of available devices
+  output: # ditto
 midi:
   port: # put any string here to have pedals show you a list of available ports
   channel: 1

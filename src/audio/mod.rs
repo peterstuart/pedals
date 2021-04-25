@@ -4,7 +4,7 @@ use crate::{ring_buffer, AudioUnit, Pipeline, Result};
 use anyhow::anyhow;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Device, StreamConfig,
+    Device, Host, StreamConfig,
 };
 use ringbuf::RingBuffer;
 use std::time::Duration;
@@ -75,19 +75,52 @@ pub fn run(
     Ok(())
 }
 
-pub fn devices() -> Result<(Device, Device)> {
+pub fn devices(
+    input_device: &Option<String>,
+    output_device: &Option<String>,
+) -> Result<(Device, Device)> {
     let host = cpal::default_host();
-    let input_device = host
-        .default_input_device()
-        .ok_or_else(|| anyhow!("Failed to find input device"))?;
+
+    let input_device = match input_device {
+        Some(name) => device(&host, &name),
+        None => host
+            .default_input_device()
+            .ok_or_else(|| anyhow!("Failed to find input device")),
+    }?;
+
     println!("Input device: {}", input_device.name()?);
 
-    let output_device = host
-        .default_output_device()
-        .ok_or_else(|| anyhow!("Failed to find output device"))?;
+    let output_device = match output_device {
+        Some(name) => device(&host, &name),
+        None => host
+            .default_output_device()
+            .ok_or_else(|| anyhow!("Failed to find output device")),
+    }?;
+
     println!("Output device {}", output_device.name()?);
 
     Ok((input_device, output_device))
+}
+
+pub fn device(host: &Host, name: &str) -> Result<Device> {
+    let device_names = host
+        .devices()?
+        .map(|device| {
+            device
+                .name()
+                .map_err(|e| anyhow!("Could not get device name: {}", e))
+        })
+        .collect::<Result<Vec<String>>>()?;
+
+    host.devices()?
+        .find(|device| device.name().map_or(false, |n| n == name))
+        .ok_or_else(|| {
+            anyhow!(
+                "Could not find an audio device with name '{}'. Available devices are:\n{}",
+                name,
+                device_names.join("\n")
+            )
+        })
 }
 
 pub fn config(device: &Device) -> Result<StreamConfig> {

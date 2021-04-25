@@ -4,7 +4,14 @@ use std::{env, fs};
 
 fn main() -> Result<()> {
     let config = config()?;
-    let (input_device, output_device) = audio::devices()?;
+
+    let input_device = config
+        .audio
+        .as_ref()
+        .and_then(|audio| (&audio.input).clone());
+    let output_device = config.audio.as_ref().and_then(|audio| audio.output.clone());
+
+    let (input_device, output_device) = audio::devices(&input_device, &output_device)?;
     let stream_config = audio::config(&input_device)?;
     let pipeline = Pipeline::from(&config, &stream_config)?;
 
