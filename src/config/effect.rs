@@ -85,7 +85,6 @@ impl Delay {
             control_value,
         ) * index;
 
-        println!("new value: {}", new_value);
         Some(new_value)
     }
 }
