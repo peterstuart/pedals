@@ -26,7 +26,7 @@ Create a configuration file for the pipeline:
 
 ```yaml
 midi:
-  port: # leave this blank to have pedals show you a list of available ports
+  port: # put any string here to have pedals show you a list of available ports
   channel: 1
 effects:
   - type: Delay
