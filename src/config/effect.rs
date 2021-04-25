@@ -44,10 +44,10 @@ impl Delay {
         let num = self.num;
         let channel = match midi_config {
             Some(midi_config) => midi_config.channel()?,
-            None => Channel::Ch1,
+            None => config::Midi::default_channel(),
         };
 
-        let mut audio_units = (1..=self.num)
+        let mut audio_units = (1..=num)
             .map(|n| {
                 let delay_unit = audio_unit::Delay::new(
                     stream_config,
@@ -79,7 +79,7 @@ impl Delay {
         let control_value =
             midi::latest_control_value(messages, channel, ControlFunction::MODULATION_WHEEL)?;
 
-        let new_value = midi::control_value_in_range(
+        let new_value = midi::interpolate_control_value(
             audio_unit::Delay::MIN_DELAY_MS,
             audio_unit::Delay::MAX_DELAY_MS / num_delays,
             control_value,

@@ -9,6 +9,10 @@ pub struct Midi {
 }
 
 impl Midi {
+    pub fn default_channel() -> Channel {
+        Channel::Ch1
+    }
+
     pub fn channel(&self) -> Result<Channel> {
         Ok(Channel::from_index(self.channel - 1)?)
     }

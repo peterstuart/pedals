@@ -48,9 +48,16 @@ pub fn latest_control_value(
 
 /// Maps a control value (0-127) into a range.
 /// eg. `control_value_in_range(50, 100, 64) == 75`
-pub fn control_value_in_range<T: Num + From<u8> + Copy>(min: T, max: T, value: ControlValue) -> T {
+pub fn interpolate_control_value<T: Num + From<u8> + Copy>(
+    min: T,
+    max: T,
+    value: ControlValue,
+) -> T {
+    let control_value_min: T = from_control_value(ControlValue::MIN);
+    let control_value_max: T = from_control_value(ControlValue::MAX);
+
     let value: T = from_control_value(value);
-    value * (max - min) / from_control_value(ControlValue::MAX) + min
+    (value - control_value_min) * (max - min) / (control_value_max - control_value_min) + min
 }
 
 fn midi_input() -> Result<MidiInput> {
@@ -116,30 +123,30 @@ mod tests {
     }
 
     #[test]
-    fn test_control_value_in_range() {
+    fn test_interpolate_control_value() {
         assert_eq!(
-            control_value_in_range(0_u32, 100_u32, 0_u8.try_into().unwrap()),
+            interpolate_control_value(0_u32, 100_u32, 0_u8.try_into().unwrap()),
             0
         );
         assert_eq!(
-            control_value_in_range(0_u32, 100_u32, 127_u8.try_into().unwrap()),
+            interpolate_control_value(0_u32, 100_u32, 127_u8.try_into().unwrap()),
             100
         );
         assert_eq!(
-            control_value_in_range(0_u32, 100_u32, 64_u8.try_into().unwrap()),
+            interpolate_control_value(0_u32, 100_u32, 64_u8.try_into().unwrap()),
             50
         );
 
         assert_eq!(
-            control_value_in_range(50_u32, 100_u32, 0_u8.try_into().unwrap()),
+            interpolate_control_value(50_u32, 100_u32, 0_u8.try_into().unwrap()),
             50
         );
         assert_eq!(
-            control_value_in_range(50_u32, 100_u32, 127_u8.try_into().unwrap()),
+            interpolate_control_value(50_u32, 100_u32, 127_u8.try_into().unwrap()),
             100
         );
         assert_eq!(
-            control_value_in_range(50_u32, 100_u32, 64_u8.try_into().unwrap()),
+            interpolate_control_value(50_u32, 100_u32, 64_u8.try_into().unwrap()),
             75
         );
     }
