@@ -1,4 +1,4 @@
-use crate::{AudioUnit, Result};
+use crate::{audio_unit::AudioUnit, Result};
 
 #[derive(Debug)]
 pub struct Transparent {}

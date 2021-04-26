@@ -30,14 +30,18 @@ Create a configuration file for the pipeline:
 audio:
   input: # put any string here to have pedals show you a list of available devices
   output: # ditto
+# midi is optional
 midi:
   port: # put any string here to have pedals show you a list of available ports
-  channel: 1
 effects:
   - type: Delay
     delay_ms: 250
     level: 0.5
     num: 6
+	# midi_slider is optional
+    midi_slider:
+      channel: 1
+      control_change: 1 # modulation wheel
 ```
 
 ```shell

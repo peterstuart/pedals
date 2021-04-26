@@ -1,17 +1,21 @@
-use crate::{ring_buffer, AudioUnit, Result};
+use crate::{audio_unit::AudioUnit, ring_buffer, Result};
 use anyhow::anyhow;
 use cpal::StreamConfig;
 use ringbuf::{Consumer, Producer, RingBuffer};
-use wmidi::MidiMessage;
+use std::sync::mpsc::{self, Receiver, Sender};
+use Message::*;
 
 pub type DelayMs = u32;
 
-type MidiMessageHandler = Box<dyn Fn(&[MidiMessage<'static>]) -> Option<DelayMs> + Send + Sync>;
+#[derive(Debug)]
+pub enum Message {
+    SetDelay(DelayMs),
+}
 
 pub struct Delay {
     delay_ms: DelayMs,
-    midi_message_handler: MidiMessageHandler,
     stream_config: StreamConfig,
+    messages: Receiver<Message>,
     producer: Producer<f32>,
     consumer: Consumer<f32>,
 }
@@ -20,12 +24,10 @@ impl Delay {
     pub const MIN_DELAY_MS: DelayMs = 0;
     pub const MAX_DELAY_MS: DelayMs = 10000;
 
-    pub fn new(
-        stream_config: &StreamConfig,
-        midi_message_handler: MidiMessageHandler,
-        delay_ms: DelayMs,
-    ) -> Result<Self> {
+    pub fn new(stream_config: &StreamConfig, delay_ms: DelayMs) -> Result<(Self, Sender<Message>)> {
         Self::validate_delay(delay_ms)?;
+
+        let (sender, receiver) = mpsc::channel();
 
         // size the ring buffer so that it can accomodate the largest allowed delay
         let ring = RingBuffer::new(Self::delay_num_samples(stream_config, Self::MAX_DELAY_MS) * 2);
@@ -36,13 +38,16 @@ impl Delay {
             Self::delay_num_samples(stream_config, delay_ms),
         )?;
 
-        Ok(Self {
-            delay_ms,
-            midi_message_handler,
-            stream_config: stream_config.clone(),
-            producer,
-            consumer,
-        })
+        Ok((
+            Self {
+                delay_ms,
+                stream_config: stream_config.clone(),
+                messages: receiver,
+                producer,
+                consumer,
+            },
+            sender,
+        ))
     }
 
     fn validate_delay(delay_ms: DelayMs) -> Result<()> {
@@ -57,12 +62,29 @@ impl Delay {
         }
     }
 
-    fn delay_num_samples(stream_config: &StreamConfig, delay_ms: u32) -> usize {
+    fn delay_num_samples(stream_config: &StreamConfig, delay_ms: DelayMs) -> usize {
         let delay_num_frames = (delay_ms as f32 / 1_000.0) * stream_config.sample_rate.0 as f32;
         delay_num_frames as usize * stream_config.channels as usize
     }
 
-    fn set_delay_ms(&mut self, delay_ms: u32) -> Result<()> {
+    fn process_messages(&mut self) -> Result<()> {
+        let messages: Vec<_> = self.messages.try_iter().collect();
+        for message in messages {
+            self.process_message(message)?;
+        }
+
+        Ok(())
+    }
+
+    fn process_message(&mut self, message: Message) -> Result<()> {
+        match message {
+            SetDelay(delay) => self.set_delay_ms(delay)?,
+        };
+
+        Ok(())
+    }
+
+    fn set_delay_ms(&mut self, delay_ms: DelayMs) -> Result<()> {
         Self::validate_delay(delay_ms)?;
 
         let old_num_samples = Self::delay_num_samples(&self.stream_config, self.delay_ms);
@@ -85,18 +107,12 @@ impl Delay {
 
 impl AudioUnit for Delay {
     fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
+        self.process_messages()?;
+
         ring_buffer::write_frame(&mut self.producer, input)?;
         let samples: Vec<f32> = ring_buffer::read_samples(&mut self.consumer, output.len())?;
         output.copy_from_slice(&samples);
 
         Ok(())
-    }
-
-    fn handle_midi_messages(&mut self, midi_messages: &[MidiMessage<'static>]) -> Result<()> {
-        if let Some(new_delay) = (self.midi_message_handler)(midi_messages) {
-            self.set_delay_ms(new_delay)
-        } else {
-            Ok(())
-        }
     }
 }

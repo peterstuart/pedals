@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{config::MidiSlider, Result};
 use anyhow::anyhow;
 use midir::{MidiInput, MidiInputPort};
 use num_traits::Num;
@@ -6,7 +6,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
 use std::{convert::TryFrom, sync::mpsc::Sender};
-use wmidi::{Channel, ControlFunction, ControlValue, MidiMessage};
+use wmidi::{ControlValue, MidiMessage};
 
 /// Listens on the provided port, and sends MIDI messages over a channel. Returns the receiver of that channel.
 pub fn listen_for_input(port_name: &str) -> Result<Receiver<MidiMessage<'static>>> {
@@ -31,13 +31,12 @@ pub fn port_names() -> Result<Vec<String>> {
 
 /// Get the last value for a `ControlFunction` from a list of messages.
 pub fn latest_control_value(
+    slider: MidiSlider,
     messages: &[MidiMessage<'static>],
-    channel: Channel,
-    control_function: ControlFunction,
 ) -> Option<ControlValue> {
     messages.iter().rev().find_map(|message| match message {
         MidiMessage::ControlChange(ch, function, value)
-            if ch == &channel && function == &control_function =>
+            if ch == &*slider.channel && function == &*slider.control_change =>
         {
             Some(*value)
         }
