@@ -1,7 +1,9 @@
+mod audio;
 mod effect;
 mod midi;
 
 use crate::{audio_unit, Result};
+use audio::Audio;
 use cpal::StreamConfig;
 use effect::Effect;
 use midi::Midi;
@@ -9,6 +11,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub audio: Option<Audio>,
     pub midi: Option<Midi>,
     pub effects: Vec<Effect>,
 }
@@ -20,6 +23,7 @@ impl Config {
 
     pub fn default() -> Self {
         Self {
+            audio: None,
             midi: None,
             effects: vec![Effect::Transparent],
         }
