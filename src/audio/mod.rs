@@ -1,4 +1,6 @@
-use crate::{ring_buffer, Pipeline, Result};
+pub mod midi;
+
+use crate::{ring_buffer, AudioUnit, Pipeline, Result};
 use anyhow::anyhow;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -6,13 +8,15 @@ use cpal::{
 };
 use ringbuf::RingBuffer;
 use std::time::Duration;
+use wmidi::MidiMessage;
 
-const LATENCY: f32 = 20.0;
+const LATENCY: f32 = 50.0;
 
 pub fn run(
     input_device: &Device,
     output_device: &Device,
     config: &StreamConfig,
+    midi_port_name: Option<String>,
     mut pipeline: Pipeline,
 ) -> Result<()> {
     let latency_num_frames = (LATENCY / 1_000.0) * config.sample_rate.0 as f32;
@@ -20,8 +24,12 @@ pub fn run(
 
     let ring = RingBuffer::new(latency_num_samples * 2);
     let (mut producer, mut consumer) = ring.split();
-
     ring_buffer::write_empty_samples(&mut producer, latency_num_samples)?;
+
+    let midi_messages = match midi_port_name {
+        Some(midi_port_name) => Some(midi::listen_for_input(&midi_port_name)?),
+        None => None,
+    };
 
     let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
         if let Err(e) = ring_buffer::write_frame(&mut producer, data) {
@@ -30,10 +38,16 @@ pub fn run(
     };
 
     let output_data_fn = move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
-        let result = ring_buffer::read_frame(&mut consumer, output.len())
-            .and_then(|frame| pipeline.process(&frame, output));
+        if let Some(midi_messages) = &midi_messages {
+            let midi_messages: Vec<MidiMessage<'static>> = midi_messages.try_iter().collect();
+            if let Err(e) = pipeline.handle_midi_messages(&midi_messages) {
+                eprintln!("error handling midi messages: {:?}", e);
+            }
+        }
 
-        if let Err(e) = result {
+        if let Err(e) = ring_buffer::read_samples(&mut consumer, output.len())
+            .and_then(|frame| pipeline.process(&frame, output))
+        {
             eprintln!("output: {:?}", e);
         };
     };

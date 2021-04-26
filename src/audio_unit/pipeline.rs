@@ -1,6 +1,7 @@
 use crate::{audio_unit, AudioUnit, Config, Result};
 use anyhow::anyhow;
 use cpal::StreamConfig;
+use wmidi::MidiMessage;
 
 pub struct Pipeline {
     audio_units: Vec<audio_unit::Boxed>,
@@ -19,8 +20,10 @@ impl Pipeline {
             Ok(Self { audio_units })
         }
     }
+}
 
-    pub fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
+impl AudioUnit for Pipeline {
+    fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
         let mut input = input.to_vec();
 
         for audio_unit in &mut self.audio_units {
@@ -30,10 +33,12 @@ impl Pipeline {
 
         Ok(())
     }
-}
 
-impl AudioUnit for Pipeline {
-    fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
-        self.process(input, output)
+    fn handle_midi_messages(&mut self, midi_messages: &[MidiMessage<'static>]) -> Result<()> {
+        for audio_unit in &mut self.audio_units {
+            audio_unit.handle_midi_messages(midi_messages)?;
+        }
+
+        Ok(())
     }
 }

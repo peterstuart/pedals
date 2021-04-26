@@ -22,14 +22,14 @@ pub fn write_frame(producer: &mut Producer<f32>, data: &[f32]) -> Result<()> {
     Ok(())
 }
 
-pub fn read_frame(consumer: &mut Consumer<f32>, size: usize) -> Result<Vec<f32>> {
-    let mut frame = vec![0.0; size];
+pub fn read_samples(consumer: &mut Consumer<f32>, size: usize) -> Result<Vec<f32>> {
+    let mut samples = vec![0.0; size];
 
-    for sample in frame.iter_mut() {
+    for sample in samples.iter_mut() {
         *sample = consumer
             .pop()
             .ok_or_else(|| anyhow!("failed to read frame"))?;
     }
 
-    Ok(frame)
+    Ok(samples)
 }
