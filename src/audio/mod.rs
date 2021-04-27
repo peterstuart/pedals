@@ -31,7 +31,7 @@ pub fn run(
     };
 
     let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
-        if let Err(e) = ring_buffer::write_frame(&mut producer, data) {
+        if let Err(e) = ring_buffer::write_samples(&mut producer, data) {
             eprintln!("input: {:?}", e);
         }
     };

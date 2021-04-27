@@ -93,7 +93,7 @@ impl AudioUnit for Delay {
     fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()> {
         self.process_messages()?;
 
-        ring_buffer::write_frame(&mut self.producer, input)?;
+        ring_buffer::write_samples(&mut self.producer, input)?;
         let samples: Vec<f32> = ring_buffer::read_samples(&mut self.consumer, output.len())?;
         output.copy_from_slice(&samples);
 
