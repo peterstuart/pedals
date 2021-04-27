@@ -12,16 +12,11 @@ pub use split::Split;
 pub use transparent::Transparent;
 
 use crate::Result;
-use wmidi::MidiMessage;
 
 pub type Boxed = Box<dyn AudioUnit>;
 
-pub trait AudioUnit: Send + Sync {
+pub trait AudioUnit: Send {
     fn process(&mut self, input: &[f32], output: &mut [f32]) -> Result<()>;
-
-    fn handle_midi_messages(&mut self, _midi_messages: &[MidiMessage<'static>]) -> Result<()> {
-        Ok(())
-    }
 
     fn boxed(self) -> Boxed
     where

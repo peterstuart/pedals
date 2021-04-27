@@ -1,6 +1,8 @@
-use crate::{audio_unit, util, AudioUnit, Result};
+use crate::{
+    audio_unit::{self, AudioUnit},
+    util, Result,
+};
 use anyhow::anyhow;
-use wmidi::MidiMessage;
 
 pub struct Split {
     audio_units: Vec<audio_unit::Boxed>,
@@ -29,14 +31,6 @@ impl AudioUnit for Split {
             for i in 0..output.len() {
                 output[i] += audio_unit_output[i];
             }
-        }
-
-        Ok(())
-    }
-
-    fn handle_midi_messages(&mut self, midi_messages: &[MidiMessage<'static>]) -> Result<()> {
-        for audio_unit in &mut self.audio_units {
-            audio_unit.handle_midi_messages(midi_messages)?;
         }
 
         Ok(())

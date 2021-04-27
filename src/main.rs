@@ -1,5 +1,9 @@
 use audio::midi;
-use pedals::{audio, Config, Pipeline, Result};
+use pedals::{
+    audio, config,
+    effect::{Effect, Pipeline},
+    Config, Result,
+};
 use std::{env, fs};
 
 fn main() -> Result<()> {
@@ -13,7 +17,7 @@ fn main() -> Result<()> {
 
     let (input_device, output_device) = audio::devices(&input_device, &output_device)?;
     let stream_config = audio::config(&input_device)?;
-    let pipeline = Pipeline::from(&config, &stream_config)?;
+    let pipeline = Pipeline::from(&config, &stream_config)?.boxed();
 
     let midi_port_names = midi::port_names()?;
 
@@ -28,7 +32,7 @@ fn main() -> Result<()> {
         &input_device,
         &output_device,
         &stream_config,
-        config.midi.map(|midi| midi.port),
+        &config.midi.unwrap_or_else(config::Midi::default),
         pipeline,
     )
 }

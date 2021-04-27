@@ -2,11 +2,11 @@ mod audio;
 mod effect;
 mod midi;
 
-use crate::{audio_unit, Result};
+pub use effect::{DelayConfig, Effect};
+pub use midi::{Midi, MidiSlider};
+
+use crate::Result;
 use audio::Audio;
-use cpal::StreamConfig;
-use effect::Effect;
-use midi::Midi;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -27,12 +27,5 @@ impl Config {
             midi: None,
             effects: vec![Effect::Transparent],
         }
-    }
-
-    pub fn to_audio_units(&self, stream_config: &StreamConfig) -> Result<Vec<audio_unit::Boxed>> {
-        self.effects
-            .iter()
-            .map(|audio_unit| audio_unit.to_audio_unit(&self.midi, stream_config))
-            .collect()
     }
 }
