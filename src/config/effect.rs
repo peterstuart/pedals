@@ -13,5 +13,5 @@ pub struct DelayConfig {
     pub level: f32,
     pub delay_ms: DelayMs,
     pub num: u32,
-    pub midi_slider: Option<MidiSlider>,
+    pub delay_ms_slider: Option<MidiSlider>,
 }

@@ -12,7 +12,7 @@ use wmidi::MidiMessage;
 
 pub struct Delay {
     config: DelayConfig,
-    unit: audio_unit::Split,
+    split: audio_unit::Split,
     message_senders: Vec<Sender<Message>>,
 }
 
@@ -38,7 +38,7 @@ impl Delay {
 
         Ok(Self {
             config,
-            unit: split,
+            split,
             message_senders,
         })
     }
@@ -52,7 +52,7 @@ impl Delay {
     }
 
     fn delay_from_midi_messages(&self, messages: &[MidiMessage<'static>]) -> Option<u32> {
-        let midi_slider = self.config.midi_slider?;
+        let midi_slider = self.config.delay_ms_slider?;
         let control_value = midi::latest_control_value(midi_slider, messages)?;
         let new_value = midi::interpolate_control_value(
             audio_unit::Delay::MIN_DELAY_MS,
@@ -85,6 +85,6 @@ impl Effect for Delay {
         output: &mut [f32],
     ) -> Result<()> {
         self.handle_midi_messages(midi_messages)?;
-        self.unit.process(input, output)
+        self.split.process(input, output)
     }
 }

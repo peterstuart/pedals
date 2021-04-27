@@ -38,8 +38,8 @@ effects:
     delay_ms: 250
     level: 0.5
     num: 6
-    # midi_slider is optional
-    midi_slider:
+    # delay_ms_slider is optional
+    delay_ms_slider:
       channel: 1
       control_change: 1 # modulation wheel
 ```
