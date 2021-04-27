@@ -5,6 +5,7 @@ use crate::{
     effect::Effect,
     Result,
 };
+use anyhow::anyhow;
 use cpal::StreamConfig;
 use std::sync::mpsc::Sender;
 use wmidi::MidiMessage;
@@ -17,14 +18,15 @@ pub struct Delay {
 
 impl Delay {
     pub fn new(config: DelayConfig, stream_config: &StreamConfig) -> Result<Self> {
+        Self::validate_config(&config)?;
+
         let mut audio_units = vec![];
         let mut message_senders = vec![];
 
         for n in 0..config.num {
             let delay = Self::delay_for_index(config.delay_ms, n);
-            let max_total_delay = config.max_delay_ms * config.num;
-            let (delay_unit, messages) =
-                audio_unit::Delay::new(stream_config, delay, max_total_delay)?;
+            let max_delay = config.max_delay_ms * (n + 1);
+            let (delay_unit, messages) = audio_unit::Delay::new(stream_config, delay, max_delay)?;
             let gain_unit = audio_unit::Gain::new(config.level.powi(n as i32)).boxed();
             let pipeline = audio_unit::Pipeline::new(vec![delay_unit.boxed(), gain_unit])?.boxed();
 
@@ -44,6 +46,14 @@ impl Delay {
         })
     }
 
+    fn validate_config(config: &DelayConfig) -> Result<()> {
+        if config.delay_ms * config.num <= config.max_delay_ms {
+            Ok(())
+        } else {
+            Err(anyhow!("Invalid delay config: {:#?}", config))
+        }
+    }
+
     fn handle_midi_messages(&mut self, messages: &[MidiMessage<'static>]) -> Result<()> {
         if let Some(delay) = self.delay_from_midi_messages(messages) {
             self.set_delay(delay)?;
@@ -55,7 +65,11 @@ impl Delay {
     fn delay_from_midi_messages(&self, messages: &[MidiMessage<'static>]) -> Option<u32> {
         let midi_slider = self.config.delay_ms_slider?;
         let control_value = midi::latest_control_value(midi_slider, messages)?;
-        let new_value = midi::interpolate_control_value(0, self.config.max_delay_ms, control_value);
+        let new_value = midi::interpolate_control_value(
+            self.config.min_delay_ms,
+            self.config.max_delay_ms,
+            control_value,
+        );
 
         Some(new_value)
     }
