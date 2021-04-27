@@ -1,5 +1,4 @@
 use crate::{audio_unit::AudioUnit, ring_buffer, Result};
-use anyhow::anyhow;
 use cpal::StreamConfig;
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -21,16 +20,15 @@ pub struct Delay {
 }
 
 impl Delay {
-    pub const MIN_DELAY_MS: DelayMs = 0;
-    pub const MAX_DELAY_MS: DelayMs = 10000;
-
-    pub fn new(stream_config: &StreamConfig, delay_ms: DelayMs) -> Result<(Self, Sender<Message>)> {
-        Self::validate_delay(delay_ms)?;
-
+    pub fn new(
+        stream_config: &StreamConfig,
+        delay_ms: DelayMs,
+        max_delay_ms: DelayMs,
+    ) -> Result<(Self, Sender<Message>)> {
         let (sender, receiver) = mpsc::channel();
 
         // size the ring buffer so that it can accomodate the largest allowed delay
-        let ring = RingBuffer::new(Self::delay_num_samples(stream_config, Self::MAX_DELAY_MS) * 2);
+        let ring = RingBuffer::new(Self::delay_num_samples(stream_config, max_delay_ms) * 2);
         let (mut producer, consumer) = ring.split();
 
         ring_buffer::write_empty_samples(
@@ -48,18 +46,6 @@ impl Delay {
             },
             sender,
         ))
-    }
-
-    fn validate_delay(delay_ms: DelayMs) -> Result<()> {
-        if delay_ms > Self::MAX_DELAY_MS {
-            return Err(anyhow!(
-                "Delay must be <= {}, but was {}",
-                Self::MAX_DELAY_MS,
-                delay_ms
-            ));
-        } else {
-            Ok(())
-        }
     }
 
     fn delay_num_samples(stream_config: &StreamConfig, delay_ms: DelayMs) -> usize {
@@ -85,8 +71,6 @@ impl Delay {
     }
 
     fn set_delay_ms(&mut self, delay_ms: DelayMs) -> Result<()> {
-        Self::validate_delay(delay_ms)?;
-
         let old_num_samples = Self::delay_num_samples(&self.stream_config, self.delay_ms);
         let new_num_samples = Self::delay_num_samples(&self.stream_config, delay_ms);
 
