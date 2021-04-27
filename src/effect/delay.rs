@@ -1,5 +1,3 @@
-use std::sync::mpsc::Sender;
-
 use crate::{
     audio::midi,
     audio_unit::{self, delay::Message, AudioUnit},
@@ -8,6 +6,7 @@ use crate::{
     Result,
 };
 use cpal::StreamConfig;
+use std::sync::mpsc::Sender;
 use wmidi::MidiMessage;
 
 pub struct Delay {
@@ -21,9 +20,11 @@ impl Delay {
         let mut audio_units = vec![];
         let mut message_senders = vec![];
 
-        for n in 1..=config.num {
+        for n in 0..config.num {
+            let delay = Self::delay_for_index(config.delay_ms, n);
+            let max_total_delay = config.max_delay_ms * config.num;
             let (delay_unit, messages) =
-                audio_unit::Delay::new(stream_config, config.delay_ms * n)?;
+                audio_unit::Delay::new(stream_config, delay, max_total_delay)?;
             let gain_unit = audio_unit::Gain::new(config.level.powi(n as i32)).boxed();
             let pipeline = audio_unit::Pipeline::new(vec![delay_unit.boxed(), gain_unit])?.boxed();
 
@@ -54,26 +55,23 @@ impl Delay {
     fn delay_from_midi_messages(&self, messages: &[MidiMessage<'static>]) -> Option<u32> {
         let midi_slider = self.config.delay_ms_slider?;
         let control_value = midi::latest_control_value(midi_slider, messages)?;
-        let new_value = midi::interpolate_control_value(
-            audio_unit::Delay::MIN_DELAY_MS,
-            audio_unit::Delay::MAX_DELAY_MS / self.config.num,
-            control_value,
-        );
+        let new_value = midi::interpolate_control_value(0, self.config.max_delay_ms, control_value);
 
         Some(new_value)
     }
 
     fn set_delay(&mut self, delay_ms: u32) -> Result<()> {
         for (i, sender) in self.message_senders.iter().enumerate() {
-            let message = Message::SetDelay(Self::delay_for_index(delay_ms, i));
+            let delay_ms = Self::delay_for_index(delay_ms, i as u32);
+            let message = Message::SetDelay(delay_ms);
             sender.send(message)?;
         }
 
         Ok(())
     }
 
-    fn delay_for_index(base_delay: u32, index: usize) -> u32 {
-        base_delay * (index as u32 + 1)
+    fn delay_for_index(base_delay: u32, index: u32) -> u32 {
+        base_delay * (index + 1)
     }
 }
 
