@@ -1,15 +1,19 @@
+mod message;
+
+pub use message::Message;
+
 use crate::{config::MidiSlider, Result};
 use anyhow::anyhow;
 use midir::{MidiInput, MidiInputPort};
 use num_traits::Num;
+use std::sync::mpsc::Sender;
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
-use std::{convert::TryFrom, sync::mpsc::Sender};
 use wmidi::{ControlValue, MidiMessage};
 
 /// Listens on the provided port, and sends MIDI messages over a channel. Returns the receiver of that channel.
-pub fn listen_for_input(port_name: &str) -> Result<Receiver<MidiMessage<'static>>> {
+pub fn listen_for_input(port_name: &str) -> Result<Receiver<Message>> {
     let port = port(port_name)?;
 
     println!("MIDI input: {}", port_name);
@@ -30,19 +34,19 @@ pub fn port_names() -> Result<Vec<String>> {
 }
 
 /// Get the last value for a `ControlFunction` from a list of messages.
-pub fn latest_control_value(
-    slider: MidiSlider,
-    messages: &[MidiMessage<'static>],
-) -> Option<ControlValue> {
-    messages.iter().rev().find_map(|message| match message {
-        MidiMessage::ControlChange(ch, function, value)
-            if ch == &*slider.channel && function == &*slider.control_change =>
-        {
-            Some(*value)
-        }
+pub fn latest_control_value(slider: MidiSlider, messages: &[Message]) -> Option<ControlValue> {
+    messages
+        .iter()
+        .rev()
+        .find_map(|message| match message.message {
+            MidiMessage::ControlChange(ch, function, value)
+                if ch == *slider.channel && function == *slider.control_change =>
+            {
+                Some(value)
+            }
 
-        _ => None,
-    })
+            _ => None,
+        })
 }
 
 /// Maps a control value (0-127) into a range.
@@ -80,7 +84,7 @@ fn port(name: &str) -> Result<MidiInputPort> {
         })
 }
 
-fn handle_messages(port: MidiInputPort, sender: Sender<MidiMessage<'static>>) {
+fn handle_messages(port: MidiInputPort, sender: Sender<Message>) {
     thread::spawn(move || {
         // _connection needs to be a named parameter, because it needs to be kept alive until the end of the scope
         let _connection = midi_input()
@@ -88,10 +92,8 @@ fn handle_messages(port: MidiInputPort, sender: Sender<MidiMessage<'static>>) {
             .connect(
                 &port,
                 "midir-read-input",
-                move |_, message, _| {
-                    if let Some(message) =
-                        MidiMessage::try_from(message).unwrap().drop_unowned_sysex()
-                    {
+                move |timestamp, bytes, _| {
+                    if let Some(message) = Message::from(timestamp, bytes).unwrap() {
                         sender.send(message).unwrap();
                     }
                 },
