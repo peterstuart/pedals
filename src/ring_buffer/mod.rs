@@ -3,33 +3,29 @@ use anyhow::anyhow;
 use ringbuf::{Consumer, Producer};
 
 pub fn write_empty_samples(producer: &mut Producer<f32>, size: usize) -> Result<()> {
-    for _ in 0..size {
-        producer
-            .push(0.0)
-            .map_err(|_| anyhow!("failed to write empty samples"))?;
-    }
-
-    Ok(())
+    let data = vec![0.0; size];
+    write_samples(producer, &data)
 }
 
-pub fn write_frame(producer: &mut Producer<f32>, data: &[f32]) -> Result<()> {
-    for &sample in data {
-        producer
-            .push(sample)
-            .map_err(|_| anyhow!("failed to write frame"))?;
-    }
+pub fn write_samples(producer: &mut Producer<f32>, data: &[f32]) -> Result<()> {
+    let wrote = producer.push_slice(data);
+    let skipped = data.len() - wrote;
 
-    Ok(())
+    if skipped > 0 {
+        Err(anyhow!("skipped {} samples when writing", skipped))
+    } else {
+        Ok(())
+    }
 }
 
 pub fn read_samples(consumer: &mut Consumer<f32>, size: usize) -> Result<Vec<f32>> {
     let mut samples = vec![0.0; size];
+    let read = consumer.pop_slice(&mut samples);
+    let missed = samples.len() - read;
 
-    for sample in samples.iter_mut() {
-        *sample = consumer
-            .pop()
-            .ok_or_else(|| anyhow!("failed to read frame"))?;
+    if missed > 0 {
+        Err(anyhow!("missed {} samples when reading", missed))
+    } else {
+        Ok(samples)
     }
-
-    Ok(samples)
 }
