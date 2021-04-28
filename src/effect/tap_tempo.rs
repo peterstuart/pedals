@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn test_handle_messages_two_note_ons() {
         test_handle_messages_with(
-            &vec![
+            &[
                 Message::new(
                     0,
                     MidiMessage::NoteOn(Channel::Ch1, Note::A0, Velocity::MAX),
@@ -101,7 +101,7 @@ mod tests {
     fn test_handle_messages_three_note_ons() {
         // three note-ons
         test_handle_messages_with(
-            &vec![
+            &[
                 Message::new(
                     0,
                     MidiMessage::NoteOn(Channel::Ch1, Note::A0, Velocity::MAX),
@@ -131,7 +131,7 @@ mod tests {
     fn test_handle_messages_two_note_ons_too_distant() {
         // two note-ons
         test_handle_messages_with(
-            &vec![
+            &[
                 Message::new(
                     0,
                     MidiMessage::NoteOn(Channel::Ch1, Note::A0, Velocity::MAX),
