@@ -1,4 +1,5 @@
 pub mod delay;
+pub mod looper;
 
 mod gain;
 mod pipeline;
@@ -7,6 +8,7 @@ mod transparent;
 
 pub use delay::Delay;
 pub use gain::Gain;
+pub use looper::Looper;
 pub use pipeline::Pipeline;
 pub use split::Split;
 pub use transparent::Transparent;

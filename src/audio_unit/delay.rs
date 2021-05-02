@@ -1,4 +1,4 @@
-use crate::{audio_unit::AudioUnit, ring_buffer, Result};
+use crate::{audio_unit::AudioUnit, ring_buffer, util, Result};
 use cpal::StreamConfig;
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -28,12 +28,12 @@ impl Delay {
         let (sender, receiver) = mpsc::channel();
 
         // size the ring buffer so that it can accomodate the largest allowed delay
-        let ring = RingBuffer::new(Self::delay_num_samples(stream_config, max_delay_ms) * 2);
+        let ring = RingBuffer::new(util::ms_in_samples(stream_config, max_delay_ms) * 2);
         let (mut producer, consumer) = ring.split();
 
         ring_buffer::write_empty_samples(
             &mut producer,
-            Self::delay_num_samples(stream_config, delay_ms),
+            util::ms_in_samples(stream_config, delay_ms),
         )?;
 
         Ok((
@@ -46,11 +46,6 @@ impl Delay {
             },
             sender,
         ))
-    }
-
-    fn delay_num_samples(stream_config: &StreamConfig, delay_ms: DelayMs) -> usize {
-        let delay_num_frames = (delay_ms as f32 / 1_000.0) * stream_config.sample_rate.0 as f32;
-        delay_num_frames as usize * stream_config.channels as usize
     }
 
     fn process_messages(&mut self) -> Result<()> {
@@ -71,8 +66,8 @@ impl Delay {
     }
 
     fn set_delay_ms(&mut self, delay_ms: DelayMs) -> Result<()> {
-        let old_num_samples = Self::delay_num_samples(&self.stream_config, self.delay_ms);
-        let new_num_samples = Self::delay_num_samples(&self.stream_config, delay_ms);
+        let old_num_samples = util::ms_in_samples(&self.stream_config, self.delay_ms);
+        let new_num_samples = util::ms_in_samples(&self.stream_config, delay_ms);
 
         if new_num_samples >= old_num_samples {
             ring_buffer::write_empty_samples(
