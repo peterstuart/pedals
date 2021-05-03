@@ -2,17 +2,19 @@ mod audio;
 mod effect;
 mod midi;
 
+pub use audio::Audio;
 pub use effect::{DelayConfig, Effect};
 pub use midi::{Midi, MidiSlider};
 
 use crate::Result;
-use audio::Audio;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub audio: Option<Audio>,
-    pub midi: Option<Midi>,
+    #[serde(default)]
+    pub audio: Audio,
+    #[serde(default)]
+    pub midi: Midi,
     pub effects: Vec<Effect>,
 }
 
@@ -20,11 +22,13 @@ impl Config {
     pub fn from(yaml: &str) -> Result<Config> {
         Ok(serde_yaml::from_str(yaml)?)
     }
+}
 
-    pub fn default() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
-            audio: None,
-            midi: None,
+            audio: Audio::default(),
+            midi: Midi::default(),
             effects: vec![Effect::Transparent],
         }
     }

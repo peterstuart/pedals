@@ -9,16 +9,15 @@ use cpal::{
 use ringbuf::RingBuffer;
 use std::time::Duration;
 
-const LATENCY: f32 = 50.0;
-
 pub fn run(
+    latency_ms: u32,
     input_device: &Device,
     output_device: &Device,
     config: &StreamConfig,
     midi_config: &config::Midi,
     mut effect: effect::Boxed,
 ) -> Result<()> {
-    let latency_num_frames = (LATENCY / 1_000.0) * config.sample_rate.0 as f32;
+    let latency_num_frames = (latency_ms as f32 / 1_000.0) * config.sample_rate.0 as f32;
     let latency_num_samples = latency_num_frames as usize * config.channels as usize;
 
     let ring = RingBuffer::new(latency_num_samples * 2);
@@ -58,7 +57,7 @@ pub fn run(
 
     println!(
         "Starting the input and output streams with {} milliseconds of latency.",
-        LATENCY
+        latency_ms
     );
     input_stream.play()?;
     output_stream.play()?;
@@ -71,13 +70,10 @@ pub fn run(
     Ok(())
 }
 
-pub fn devices(
-    input_device: &Option<String>,
-    output_device: &Option<String>,
-) -> Result<(Device, Device)> {
+pub fn devices(config: &config::Audio) -> Result<(Device, Device)> {
     let host = cpal::default_host();
 
-    let input_device = match input_device {
+    let input_device = match &config.input {
         Some(name) => device(&host, &name),
         None => host
             .default_input_device()
@@ -86,7 +82,7 @@ pub fn devices(
 
     println!("Input device: {}", input_device.name()?);
 
-    let output_device = match output_device {
+    let output_device = match &config.output {
         Some(name) => device(&host, &name),
         None => host
             .default_output_device()
