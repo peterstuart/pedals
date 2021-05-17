@@ -960,9 +960,9 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "wmidi"
-version = "4.0.5"
+version = "4.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2453f32da826ffe0e91d49eb89ef9d7fc9a0500e75530e92773aaf34271ed9a8"
+checksum = "8b7ff057a07cdcca1dce95859fb6e205dc99a9bc526d72f3d724468a12aa74a5"
 
 [[package]]
 name = "yaml-rust"
