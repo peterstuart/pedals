@@ -68,7 +68,7 @@ mod tests {
     use super::*;
     use wmidi::{Channel, Note, Velocity};
 
-    fn test_handle_messages_with(messages: &[Message], expected_tempo: Option<Tempo>) {
+    fn assert_produces_tempo(messages: &[Message], expected_tempo: Option<Tempo>) {
         let note_on = NoteOn::new(Channel::Ch1, Note::A0);
         let mut tap_tempo = TapTempo::new(note_on);
         let tempo = tap_tempo.handle_messages(&messages);
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_handle_messages_two_note_ons() {
-        test_handle_messages_with(
+        assert_produces_tempo(
             &[
                 Message::new(
                     0,
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_handle_messages_three_note_ons() {
         // three note-ons
-        test_handle_messages_with(
+        assert_produces_tempo(
             &[
                 Message::new(
                     0,
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_handle_messages_two_note_ons_too_distant() {
         // two note-ons
-        test_handle_messages_with(
+        assert_produces_tempo(
             &[
                 Message::new(
                     0,
