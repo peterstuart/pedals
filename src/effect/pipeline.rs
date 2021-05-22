@@ -1,6 +1,7 @@
 use cpal::StreamConfig;
 
 use crate::{
+    audio::midi::Message,
     effect::{self, Effect},
     Config, Result,
 };
@@ -28,7 +29,7 @@ impl Pipeline {
 impl Effect for Pipeline {
     fn process(
         &mut self,
-        midi_messages: &[wmidi::MidiMessage<'static>],
+        midi_messages: &[Message],
         input: &[f32],
         output: &mut [f32],
     ) -> Result<()> {

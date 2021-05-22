@@ -1,12 +1,8 @@
-use crate::{audio_unit::delay::DelayMs, config::MidiSlider};
+use crate::{
+    audio_unit::delay::DelayMs,
+    config::{MidiSlider, NoteOn},
+};
 use serde::Deserialize;
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-#[serde(tag = "type")]
-pub enum Effect {
-    Transparent,
-    Delay(DelayConfig),
-}
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 pub struct DelayConfig {
@@ -21,6 +17,7 @@ pub struct DelayConfig {
     #[serde(default = "DelayConfig::default_num")]
     pub num: u32,
     pub delay_ms_slider: Option<MidiSlider>,
+    pub tap_tempo: Option<NoteOn>,
 }
 
 impl DelayConfig {

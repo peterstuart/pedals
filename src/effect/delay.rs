@@ -1,3 +1,4 @@
+use super::tap_tempo::TapTempo;
 use crate::{
     audio::midi,
     audio_unit::{self, delay::Message, AudioUnit},
@@ -8,10 +9,10 @@ use crate::{
 use anyhow::anyhow;
 use cpal::StreamConfig;
 use std::sync::mpsc::Sender;
-use wmidi::MidiMessage;
 
 pub struct Delay {
     config: DelayConfig,
+    tap_tempo: Option<TapTempo>,
     split: audio_unit::Split,
     message_senders: Vec<Sender<Message>>,
 }
@@ -19,6 +20,8 @@ pub struct Delay {
 impl Delay {
     pub fn new(config: DelayConfig, stream_config: &StreamConfig) -> Result<Self> {
         Self::validate_config(&config)?;
+
+        let tap_tempo = config.tap_tempo.map(TapTempo::new);
 
         let mut audio_units = vec![];
         let mut message_senders = vec![];
@@ -41,6 +44,7 @@ impl Delay {
 
         Ok(Self {
             config,
+            tap_tempo,
             split,
             message_senders,
         })
@@ -54,7 +58,7 @@ impl Delay {
         }
     }
 
-    fn handle_midi_messages(&mut self, messages: &[MidiMessage<'static>]) -> Result<()> {
+    fn handle_midi_messages(&mut self, messages: &[midi::Message]) -> Result<()> {
         if let Some(delay) = self.delay_from_midi_messages(messages) {
             self.set_delay(delay)?;
         }
@@ -62,7 +66,14 @@ impl Delay {
         Ok(())
     }
 
-    fn delay_from_midi_messages(&self, messages: &[MidiMessage<'static>]) -> Option<u32> {
+    fn delay_from_midi_messages(&mut self, messages: &[midi::Message]) -> Option<u32> {
+        let delay_from_slider = self.delay_from_midi_messages_slider(messages);
+        let delay_from_tap_tempo = self.delay_from_midi_messages_tap(messages);
+
+        delay_from_slider.or(delay_from_tap_tempo)
+    }
+
+    fn delay_from_midi_messages_slider(&self, messages: &[midi::Message]) -> Option<u32> {
         let midi_slider = self.config.delay_ms_slider?;
         let control_value = midi::latest_control_value(midi_slider, messages)?;
         let new_value = midi::interpolate_control_value(
@@ -72,6 +83,13 @@ impl Delay {
         );
 
         Some(new_value)
+    }
+
+    fn delay_from_midi_messages_tap(&mut self, messages: &[midi::Message]) -> Option<u32> {
+        let tap_tempo = self.tap_tempo.as_mut()?;
+        let tempo = tap_tempo.handle_messages(messages)?;
+
+        Some(tempo.beat_duration_as_ms())
     }
 
     fn set_delay(&mut self, delay_ms: u32) -> Result<()> {
@@ -92,7 +110,7 @@ impl Delay {
 impl Effect for Delay {
     fn process(
         &mut self,
-        midi_messages: &[MidiMessage<'static>],
+        midi_messages: &[midi::Message],
         input: &[f32],
         output: &mut [f32],
     ) -> Result<()> {

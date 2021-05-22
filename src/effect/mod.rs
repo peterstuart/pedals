@@ -1,21 +1,23 @@
 mod delay;
 mod pipeline;
+mod tap_tempo;
+mod tempo;
 mod transparent;
 
 pub use delay::Delay;
 pub use pipeline::Pipeline;
+pub use tempo::Tempo;
 pub use transparent::Transparent;
 
-use crate::{config, Result};
+use crate::{audio::midi::Message, config, Result};
 use cpal::StreamConfig;
-use wmidi::MidiMessage;
 
 pub type Boxed = Box<dyn Effect>;
 
 pub trait Effect: Send {
     fn process(
         &mut self,
-        midi_messages: &[MidiMessage<'static>],
+        midi_messages: &[Message],
         input: &[f32],
         output: &mut [f32],
     ) -> Result<()>;

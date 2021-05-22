@@ -1,9 +1,9 @@
 use crate::{
+    audio::midi::Message,
     audio_unit::{self, AudioUnit},
     effect::Effect,
     Result,
 };
-use wmidi::MidiMessage;
 
 pub struct Transparent {
     unit: audio_unit::Transparent,
@@ -18,12 +18,7 @@ impl Transparent {
 }
 
 impl Effect for Transparent {
-    fn process(
-        &mut self,
-        _: &[MidiMessage<'static>],
-        input: &[f32],
-        output: &mut [f32],
-    ) -> Result<()> {
+    fn process(&mut self, _: &[Message], input: &[f32], output: &mut [f32]) -> Result<()> {
         self.unit.process(input, output)
     }
 }

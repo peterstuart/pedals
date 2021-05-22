@@ -3,7 +3,7 @@ mod effect;
 mod midi;
 
 pub use effect::{DelayConfig, Effect};
-pub use midi::{Midi, MidiSlider};
+pub use midi::{Midi, MidiSlider, NoteOn};
 
 use crate::Result;
 use audio::Audio;

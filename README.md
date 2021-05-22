@@ -42,6 +42,10 @@ effects:
     delay_ms_slider:
       channel: 1
       control_change: 1 # modulation wheel
+    # tap_tempo is optional
+    tap_tempo:
+      channel: 1
+      note: 60 # middle c
 ```
 
 ```shell
