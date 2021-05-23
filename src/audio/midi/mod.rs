@@ -4,24 +4,22 @@ pub use message::Message;
 
 use crate::{config::MidiSlider, Result};
 use anyhow::anyhow;
-use midir::{MidiInput, MidiInputPort};
+use midir::{MidiInput, MidiInputConnection, MidiInputPort};
 use num_traits::Num;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::{self, Receiver};
-use std::thread;
-use std::time::Duration;
 use wmidi::{ControlValue, MidiMessage};
 
 /// Listens on the provided port, and sends MIDI messages over a channel. Returns the receiver of that channel.
-pub fn listen_for_input(port_name: &str) -> Result<Receiver<Message>> {
+pub fn listen_for_input(port_name: &str) -> Result<(Receiver<Message>, MidiInputConnection<()>)> {
     let port = port(port_name)?;
 
     println!("MIDI input: {}", port_name);
 
     let (sender, receiver) = mpsc::channel();
-    handle_messages(port, sender);
+    let midi_input = handle_messages(port, sender)?;
 
-    Ok(receiver)
+    Ok((receiver, midi_input))
 }
 
 pub fn port_names() -> Result<Vec<String>> {
@@ -84,26 +82,22 @@ fn port(name: &str) -> Result<MidiInputPort> {
         })
 }
 
-fn handle_messages(port: MidiInputPort, sender: Sender<Message>) {
-    thread::spawn(move || {
-        // _connection needs to be a named parameter, because it needs to be kept alive until the end of the scope
-        let _connection = midi_input()
-            .unwrap()
-            .connect(
-                &port,
-                "midir-read-input",
-                move |timestamp, bytes, _| {
-                    if let Some(message) = Message::from(timestamp, bytes).unwrap() {
-                        sender.send(message).unwrap();
-                    }
-                },
-                (),
-            )
-            .unwrap();
-
-        // keep this thread alive forever
-        thread::sleep(Duration::from_micros(u64::MAX));
-    });
+fn handle_messages(
+    port: MidiInputPort,
+    sender: Sender<Message>,
+) -> Result<MidiInputConnection<()>> {
+    Ok(midi_input()?
+        .connect(
+            &port,
+            "midir-read-input",
+            move |timestamp, bytes, _| {
+                if let Some(message) = Message::from(timestamp, bytes).unwrap() {
+                    sender.send(message).unwrap();
+                }
+            },
+            (),
+        )
+        .map_err(|e| anyhow!("could not connect: {}", e))?)
 }
 
 fn from_control_value<T: From<u8>>(value: ControlValue) -> T {

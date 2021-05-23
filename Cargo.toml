@@ -4,19 +4,31 @@ version = "0.1.0"
 authors = ["Peter Stuart <peter@peterstuart.org>"]
 edition = "2018"
 
+[lib]
+name = "pedals"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 anyhow = "1.0.40"
+console_error_panic_hook = "0.1.6"
 cpal = "0.13.3"
 midir = "0.7.0"
 num-traits = "0.2.14"
 ringbuf = "0.2.5"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_yaml = "0.8.17"
+wasm-bindgen = "0.2.63"
 wmidi = "4.0.6"
 
-[lib]
-name = "pedals"
-path = "src/lib.rs"
+[dev-dependencies]
+wasm-bindgen-test = "0.3.13"
+
+[profile.release]
+opt-level = "s"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
 
 [[bin]]
 name = "pedals"

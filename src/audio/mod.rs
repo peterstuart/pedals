@@ -25,9 +25,12 @@ pub fn run(
     let (mut producer, mut consumer) = ring.split();
     ring_buffer::write_empty_samples(&mut producer, latency_num_samples)?;
 
-    let midi_messages = match &midi_config.port {
-        Some(port_name) => Some(midi::listen_for_input(port_name)?),
-        None => None,
+    let (midi_messages, _midi_input) = match &midi_config.port {
+        Some(port_name) => {
+            let (midi_messages, midi_input) = midi::listen_for_input(port_name)?;
+            (Some(midi_messages), Some(midi_input))
+        }
+        None => (None, None),
     };
 
     let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
