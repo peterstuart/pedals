@@ -7,8 +7,8 @@ pub struct Midi {
     pub port: Option<String>,
 }
 
-impl Midi {
-    pub fn default() -> Self {
+impl Default for Midi {
+    fn default() -> Self {
         Self { port: None }
     }
 }

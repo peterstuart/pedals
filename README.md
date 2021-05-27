@@ -28,6 +28,7 @@ Create a configuration file for the pipeline:
 # omit "audio" to use the defaults
 # all fields in "audio" are optional
 audio:
+  latency_ms: # latency between input and ouput
   input: # put any string here to have pedals show you a list of available devices
   output: # ditto
 # midi is optional
