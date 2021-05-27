@@ -34,7 +34,7 @@ impl TapTempo {
     fn handle_message(&mut self, message: &Message) -> Option<Tempo> {
         match message.message {
             MidiMessage::NoteOn(channel, note, _)
-                if channel == *self.note_on.channel && note == *self.note_on.note =>
+                if channel == self.note_on.channel && note == self.note_on.note =>
             {
                 self.handle_tap(message.timestamp)
             }

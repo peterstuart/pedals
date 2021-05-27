@@ -40,7 +40,7 @@ pub fn latest_control_value(slider: MidiSlider, messages: &[Message]) -> Option<
         .rev()
         .find_map(|message| match message.message {
             MidiMessage::ControlChange(ch, function, value)
-                if ch == *slider.channel && function == *slider.control_change =>
+                if ch == slider.channel && function == slider.control_change =>
             {
                 Some(value)
             }
