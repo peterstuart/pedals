@@ -34,12 +34,8 @@ fn main() -> Result<()> {
 
 fn config() -> Result<Config> {
     let args: Vec<String> = env::args().collect();
-    let path = args.get(1);
-
-    match path {
-        Some(path) => config_from_path(path),
-        None => Ok(Config::default()),
-    }
+    let config = args.get(1).map(|path| config_from_path(path)).transpose()?;
+    Ok(config.unwrap_or_default())
 }
 
 fn config_from_path(path: &str) -> Result<Config> {
