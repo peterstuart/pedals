@@ -80,15 +80,6 @@ pub fn devices(
 ) -> Result<(Device, Device)> {
     let host = cpal::default_host();
 
-    let input_device = match input_device {
-        Some(name) => device(&host, &name),
-        None => host
-            .default_input_device()
-            .ok_or_else(|| anyhow!("Failed to find input device")),
-    }?;
-
-    println!("Input device: {}", input_device.name()?);
-
     let output_device = match output_device {
         Some(name) => device(&host, &name),
         None => host
@@ -97,6 +88,15 @@ pub fn devices(
     }?;
 
     println!("Output device {}", output_device.name()?);
+
+    let input_device = match input_device {
+        Some(name) => device(&host, &name),
+        None => host
+            .default_input_device()
+            .ok_or_else(|| anyhow!("Failed to find input device")),
+    }?;
+
+    println!("Input device: {}", input_device.name()?);
 
     Ok((input_device, output_device))
 }

@@ -10,4 +10,4 @@ mod wasm_main;
 
 pub use config::Config;
 pub use result::Result;
-pub use wasm_main::run;
+pub use wasm_main::{beep, main_js};
