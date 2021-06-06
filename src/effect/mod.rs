@@ -1,10 +1,12 @@
 mod delay;
+mod looper;
 mod pipeline;
 mod tap_tempo;
 mod tempo;
 mod transparent;
 
 pub use delay::Delay;
+pub use looper::Looper;
 pub use pipeline::Pipeline;
 pub use tempo::Tempo;
 pub use transparent::Transparent;
@@ -34,5 +36,6 @@ pub fn from(config: config::Effect, stream_config: &StreamConfig) -> Result<Boxe
     Ok(match config {
         config::Effect::Transparent => Transparent::new().boxed(),
         config::Effect::Delay(delay_config) => Delay::new(delay_config, stream_config)?.boxed(),
+        config::Effect::Looper(looper_config) => Looper::new(looper_config, stream_config)?.boxed(),
     })
 }

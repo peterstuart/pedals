@@ -47,6 +47,12 @@ effects:
     tap_tempo:
       channel: 1
       note: 60 # middle c
+  - type: Looper
+    max_ms: 60000 #optional
+    toggle:
+      channel: 1
+      note: 60
+
 ```
 
 ```shell

@@ -1,6 +1,8 @@
 mod delay;
+mod looper;
 
 pub use delay::DelayConfig;
+pub use looper::LooperConfig;
 
 use serde::Deserialize;
 
@@ -9,4 +11,5 @@ use serde::Deserialize;
 pub enum Effect {
     Transparent,
     Delay(DelayConfig),
+    Looper(LooperConfig),
 }
