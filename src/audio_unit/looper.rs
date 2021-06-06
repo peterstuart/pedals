@@ -54,10 +54,7 @@ impl Looper {
             Playing {
                 position: _,
                 total: _,
-            } => {
-                util::zero_slice(&mut self.buffer);
-                Off
-            }
+            } => Off,
         };
 
         println!("looper: {:?}", self.state);
@@ -95,11 +92,13 @@ impl Looper {
 
                 if next_position <= total {
                     output.copy_from_slice(&self.buffer[position..next_position]);
+                    let position = if next_position == total {
+                        0
+                    } else {
+                        next_position
+                    };
 
-                    self.state = Playing {
-                        position: next_position % total,
-                        total,
-                    }
+                    self.state = Playing { position, total }
                 } else {
                     self.process_samples_wrap_around(position, total, input, output);
                 }
