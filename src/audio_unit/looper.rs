@@ -121,9 +121,8 @@ impl Looper {
                 if next_position <= total {
                     output.copy_from_slice(&self.buffer[position..next_position]);
 
-                    for sample_number in 0..input.len() {
-                        self.buffer[position + sample_number] =
-                            self.buffer[position + sample_number] + input[sample_number];
+                    for (sample_number, input_sample) in input.iter().enumerate() {
+                        self.buffer[position + sample_number] += input_sample;
                     }
 
                     let position = if next_position == total {
