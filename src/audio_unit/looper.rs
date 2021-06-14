@@ -115,10 +115,28 @@ impl Looper {
             PlayingAwaitingOverdub { position, total } => {
                 self.process_samples_playing(position, total, input, output);
             }
-            Overdubbing {
-                position: _,
-                total: _,
-            } => {}
+            Overdubbing { position, total } => {
+                let next_position = position + output.len();
+
+                if next_position <= total {
+                    output.copy_from_slice(&self.buffer[position..next_position]);
+                    let position = if next_position == total {
+                        0
+                    } else {
+                        next_position
+                    };
+
+                    self.state = match next_position == total {
+                        true => {
+                            println!("looper: done overdubbing");
+                            Playing { position, total }
+                        }
+                        _ => Overdubbing { position, total },
+                    }
+                } else {
+                    self.process_samples_wrap_around(position, total, input, output);
+                }
+            }
         };
     }
 
