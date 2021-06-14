@@ -18,7 +18,7 @@ enum State {
 
 pub struct Looper {
     messages: Receiver<Message>,
-    buffer: Vec<f32>,
+    buffers: Vec<Vec<f32>>,
     state: State,
 }
 
@@ -31,7 +31,7 @@ impl Looper {
         (
             Self {
                 messages: receiver,
-                buffer,
+                buffers: vec![buffer],
                 state: Off,
             },
             sender,
@@ -69,10 +69,12 @@ impl Looper {
             Recording { position } => {
                 let next_position = position + input.len();
 
-                if next_position <= self.buffer.len() {
-                    self.buffer[position..next_position].copy_from_slice(input);
+                let buffer = &mut self.buffers[0];
 
-                    if next_position == self.buffer.len() {
+                if next_position <= buffer.len() {
+                    buffer[position..next_position].copy_from_slice(input);
+
+                    if next_position == buffer.len() {
                         println!("looper: out of space in the buffer. switching to playback");
 
                         self.state = Playing {
@@ -85,14 +87,21 @@ impl Looper {
                         };
                     }
                 } else {
-                    self.process_samples_wrap_around(position, self.buffer.len(), input, output);
+                    self.process_samples_wrap_around(
+                        position,
+                        self.buffers[0].len(),
+                        input,
+                        output,
+                    );
                 }
             }
             Playing { position, total } => {
                 let next_position = position + output.len();
 
+                let buffer = &self.buffers[0];
+
                 if next_position <= total {
-                    output.copy_from_slice(&self.buffer[position..next_position]);
+                    output.copy_from_slice(&buffer[position..next_position]);
                     let position = if next_position == total {
                         0
                     } else {
