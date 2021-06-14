@@ -37,6 +37,12 @@ impl Looper {
                 {
                     self.toggle()?;
                 }
+                MidiMessage::NoteOn(channel, note, _)
+                    if channel == self.config.overdub.channel
+                        && note == self.config.overdub.note =>
+                {
+                    self.toggle_overdub_mode()?;
+                }
                 _ => (),
             }
         }
@@ -46,6 +52,10 @@ impl Looper {
 
     fn toggle(&mut self) -> Result<()> {
         Ok(self.messages.send(Message::Toggle)?)
+    }
+
+    fn toggle_overdub_mode(&mut self) -> Result<()> {
+        Ok(self.messages.send(Message::ToggleOverdubMode)?)
     }
 }
 

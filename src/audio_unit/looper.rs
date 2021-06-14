@@ -6,6 +6,7 @@ use State::*;
 #[derive(Debug)]
 pub enum Message {
     Toggle,
+    ToggleOverdubMode,
 }
 
 #[derive(Debug)]

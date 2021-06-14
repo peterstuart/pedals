@@ -6,6 +6,7 @@ pub struct LooperConfig {
     #[serde(default = "LooperConfig::default_loop_max")]
     pub max_ms: u32,
     pub toggle: NoteOn,
+    pub overdub: NoteOn,
 }
 
 impl LooperConfig {
