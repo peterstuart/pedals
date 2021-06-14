@@ -120,6 +120,12 @@ impl Looper {
 
                 if next_position <= total {
                     output.copy_from_slice(&self.buffer[position..next_position]);
+
+                    for sample_number in 0..input.len() {
+                        self.buffer[position + sample_number] =
+                            self.buffer[position + sample_number] + input[sample_number];
+                    }
+
                     let position = if next_position == total {
                         0
                     } else {
