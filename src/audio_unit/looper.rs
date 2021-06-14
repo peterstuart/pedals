@@ -150,8 +150,10 @@ impl Looper {
 
             self.state = match self.state {
                 PlayingAwaitingOverdub { .. } if next_position == total => {
+                    println!("looper: activating overdub");
                     Overdubbing { position, total }
                 }
+                PlayingAwaitingOverdub { .. } => PlayingAwaitingOverdub { position, total },
                 _ => Playing { position, total },
             }
         } else {
