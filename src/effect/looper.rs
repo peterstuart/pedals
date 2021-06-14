@@ -41,7 +41,7 @@ impl Looper {
                     if channel == self.config.overdub.channel
                         && note == self.config.overdub.note =>
                 {
-                    self.toggle_overdub_mode()?;
+                    self.enable_overdub_mode()?;
                 }
                 _ => (),
             }
@@ -54,8 +54,8 @@ impl Looper {
         Ok(self.messages.send(Message::Toggle)?)
     }
 
-    fn toggle_overdub_mode(&mut self) -> Result<()> {
-        Ok(self.messages.send(Message::ToggleOverdubMode)?)
+    fn enable_overdub_mode(&mut self) -> Result<()> {
+        Ok(self.messages.send(Message::EnableOverdubMode)?)
     }
 }
 
