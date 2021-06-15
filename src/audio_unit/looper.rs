@@ -56,18 +56,7 @@ impl Looper {
                         position: 0,
                         total: position,
                     },
-                    Playing {
-                        position: _,
-                        total: _,
-                    } => Off,
-                    PlayingAwaitingOverdub {
-                        position: _,
-                        total: _,
-                    } => Off,
-                    Overdubbing {
-                        position: _,
-                        total: _,
-                    } => Off,
+                    _ => Off,
                 };
 
                 println!("looper: {:?}", self.state);
