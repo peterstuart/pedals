@@ -120,12 +120,11 @@ impl Looper {
                         next_position
                     };
 
-                    self.state = match next_position == total {
-                        true => {
-                            println!("looper: done overdubbing");
-                            Playing { position, total }
-                        }
-                        _ => Overdubbing { position, total },
+                    self.state = if next_position == total {
+                        println!("looper: done overdubbing");
+                        Playing { position, total }
+                    } else {
+                        Overdubbing { position, total }
                     }
                 } else {
                     self.process_samples_wrap_around(position, total, input, output);
