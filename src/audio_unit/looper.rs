@@ -6,7 +6,7 @@ use State::*;
 #[derive(Debug)]
 pub enum Message {
     Toggle,
-    EnableOverdubMode,
+    QueueOverdub,
 }
 
 #[derive(Debug)]
@@ -72,7 +72,7 @@ impl Looper {
 
                 println!("looper: {:?}", self.state);
             }
-            Message::EnableOverdubMode => {
+            Message::QueueOverdub => {
                 if let Playing { position, total } = self.state {
                     self.state = PlayingAwaitingOverdub { position, total };
 

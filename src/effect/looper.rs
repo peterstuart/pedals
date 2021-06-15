@@ -55,7 +55,7 @@ impl Looper {
     }
 
     fn enable_overdub_mode(&mut self) -> Result<()> {
-        Ok(self.messages.send(Message::EnableOverdubMode)?)
+        Ok(self.messages.send(Message::QueueOverdub)?)
     }
 }
 
