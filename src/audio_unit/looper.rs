@@ -28,6 +28,29 @@ impl State {
             };
         }
     }
+
+    pub fn queue_overdub(&mut self) {
+        if let Playing { position, total } = self {
+            println!("looper: enabling overdub mode");
+            *self = PlayingAwaitingOverdub {
+                position: *position,
+                total: *total,
+            };
+        }
+    }
+
+    pub fn toggle(&mut self) {
+        *self = match self {
+            Off => Recording { position: 0 },
+            Recording { position } => Playing {
+                position: 0,
+                total: *position,
+            },
+            _ => Off,
+        };
+
+        println!("looper: {:?}", self);
+    }
 }
 
 pub struct Looper {
@@ -62,23 +85,10 @@ impl Looper {
     fn process_message(&mut self, message: Message) {
         match message {
             Message::Toggle => {
-                self.state = match self.state {
-                    Off => Recording { position: 0 },
-                    Recording { position } => Playing {
-                        position: 0,
-                        total: position,
-                    },
-                    _ => Off,
-                };
-
-                println!("looper: {:?}", self.state);
+                self.state.toggle();
             }
             Message::QueueOverdub => {
-                if let Playing { position, total } = self.state {
-                    self.state = PlayingAwaitingOverdub { position, total };
-
-                    println!("looper: enabling overdub mode");
-                }
+                self.state.queue_overdub();
             }
         }
     }
@@ -160,7 +170,7 @@ impl Looper {
             };
 
             if next_position == total {
-                self.state.start_overdubbing_if_queued(position)
+                self.state.start_overdubbing_if_queued(position);
             }
         } else {
             self.process_samples_wrap_around(position, total, input, output);
