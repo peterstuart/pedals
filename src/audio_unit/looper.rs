@@ -19,13 +19,39 @@ enum State {
 }
 
 impl State {
-    pub fn start_overdubbing_if_queued(&mut self, position: usize) {
+    pub fn is_awaiting_overdub(&self) -> bool {
+        matches!(self, State::PlayingAwaitingOverdub { .. })
+    }
+
+    pub fn start_overdubbing(&mut self, position: usize) {
         if let State::PlayingAwaitingOverdub { total, .. } = self {
             println!("looper: activating overdub");
             *self = Overdubbing {
                 position,
                 total: *total,
             };
+        } else {
+            panic!("Called start_overdubbing() while not awaiting overdub");
+        }
+    }
+
+    pub fn update_position(&mut self, position: usize) {
+        match self {
+            State::Playing { total, .. } => {
+                *self = Playing {
+                    position,
+                    total: *total,
+                };
+            }
+            State::PlayingAwaitingOverdub { total, .. } => {
+                *self = PlayingAwaitingOverdub {
+                    position,
+                    total: *total,
+                };
+            }
+            _ => {
+                panic!("Called update_position() when not playing: {:?}", self);
+            }
         }
     }
 
@@ -169,8 +195,10 @@ impl Looper {
                 next_position
             };
 
-            if next_position == total {
-                self.state.start_overdubbing_if_queued(position);
+            if next_position == total && self.state.is_awaiting_overdub() {
+                self.state.start_overdubbing(position);
+            } else {
+                self.state.update_position(position);
             }
         } else {
             self.process_samples_wrap_around(position, total, input, output);
