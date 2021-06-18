@@ -18,6 +18,18 @@ enum State {
     Overdubbing { position: usize, total: usize },
 }
 
+impl State {
+    pub fn start_overdubbing_if_queued(&mut self, position: usize) {
+        if let State::PlayingAwaitingOverdub { total, .. } = self {
+            println!("looper: activating overdub");
+            *self = Overdubbing {
+                position,
+                total: *total,
+            };
+        }
+    }
+}
+
 pub struct Looper {
     messages: Receiver<Message>,
     buffer: Vec<f32>,
@@ -147,13 +159,8 @@ impl Looper {
                 next_position
             };
 
-            self.state = match self.state {
-                PlayingAwaitingOverdub { .. } if next_position == total => {
-                    println!("looper: activating overdub");
-                    Overdubbing { position, total }
-                }
-                PlayingAwaitingOverdub { .. } => PlayingAwaitingOverdub { position, total },
-                _ => Playing { position, total },
+            if next_position == total {
+                self.state.start_overdubbing_if_queued(position)
             }
         } else {
             self.process_samples_wrap_around(position, total, input, output);
