@@ -50,12 +50,11 @@ impl TapTempo {
             }
             TappedOnce(last_tap) => {
                 let time_since_last_tap = timestamp - last_tap;
+                self.state = TappedOnce(timestamp);
 
                 if time_since_last_tap <= Self::MAX_DELAY_BETWEEN_TAPS {
-                    self.state = TappedOnce(timestamp);
                     Some(Tempo::new(timestamp, time_since_last_tap))
                 } else {
-                    self.state = TappedOnce(timestamp);
                     None
                 }
             }
