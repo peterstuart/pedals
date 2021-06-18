@@ -6,6 +6,7 @@ use State::*;
 #[derive(Debug)]
 pub enum Message {
     Toggle,
+    QueueOverdub,
 }
 
 #[derive(Debug)]
@@ -13,6 +14,69 @@ enum State {
     Off,
     Recording { position: usize },
     Playing { position: usize, total: usize },
+    PlayingAwaitingOverdub { position: usize, total: usize },
+    Overdubbing { position: usize, total: usize },
+}
+
+impl State {
+    pub fn is_awaiting_overdub(&self) -> bool {
+        matches!(self, State::PlayingAwaitingOverdub { .. })
+    }
+
+    pub fn start_overdubbing(&mut self, position: usize) {
+        if let State::PlayingAwaitingOverdub { total, .. } = self {
+            println!("looper: activating overdub");
+            *self = Overdubbing {
+                position,
+                total: *total,
+            };
+        } else {
+            panic!("Called start_overdubbing() while not awaiting overdub");
+        }
+    }
+
+    pub fn update_position(&mut self, position: usize) {
+        match self {
+            State::Playing { total, .. } => {
+                *self = Playing {
+                    position,
+                    total: *total,
+                };
+            }
+            State::PlayingAwaitingOverdub { total, .. } => {
+                *self = PlayingAwaitingOverdub {
+                    position,
+                    total: *total,
+                };
+            }
+            _ => {
+                panic!("Called update_position() when not playing: {:?}", self);
+            }
+        }
+    }
+
+    pub fn queue_overdub(&mut self) {
+        if let Playing { position, total } = self {
+            println!("looper: enabling overdub mode");
+            *self = PlayingAwaitingOverdub {
+                position: *position,
+                total: *total,
+            };
+        }
+    }
+
+    pub fn toggle(&mut self) {
+        *self = match self {
+            Off => Recording { position: 0 },
+            Recording { position } => Playing {
+                position: 0,
+                total: *position,
+            },
+            _ => Off,
+        };
+
+        println!("looper: {:?}", self);
+    }
 }
 
 pub struct Looper {
@@ -44,20 +108,15 @@ impl Looper {
         }
     }
 
-    fn process_message(&mut self, _: Message) {
-        self.state = match self.state {
-            Off => Recording { position: 0 },
-            Recording { position } => Playing {
-                position: 0,
-                total: position,
-            },
-            Playing {
-                position: _,
-                total: _,
-            } => Off,
-        };
-
-        println!("looper: {:?}", self.state);
+    fn process_message(&mut self, message: Message) {
+        match message {
+            Message::Toggle => {
+                self.state.toggle();
+            }
+            Message::QueueOverdub => {
+                self.state.queue_overdub();
+            }
+        }
     }
 
     fn process_samples(&mut self, input: &[f32], output: &mut [f32]) {
@@ -87,23 +146,63 @@ impl Looper {
                     self.process_samples_wrap_around(position, self.buffer.len(), input, output);
                 }
             }
-            Playing { position, total } => {
+            Playing { position, total } | PlayingAwaitingOverdub { position, total } => {
+                self.process_samples_playing(position, total, input, output);
+            }
+            Overdubbing { position, total } => {
                 let next_position = position + output.len();
 
                 if next_position <= total {
                     output.copy_from_slice(&self.buffer[position..next_position]);
+
+                    for (sample_number, input_sample) in input.iter().enumerate() {
+                        self.buffer[position + sample_number] += input_sample;
+                    }
+
                     let position = if next_position == total {
                         0
                     } else {
                         next_position
                     };
 
-                    self.state = Playing { position, total }
+                    self.state = if next_position == total {
+                        println!("looper: done overdubbing");
+                        Playing { position, total }
+                    } else {
+                        Overdubbing { position, total }
+                    }
                 } else {
                     self.process_samples_wrap_around(position, total, input, output);
                 }
             }
         };
+    }
+
+    fn process_samples_playing(
+        &mut self,
+        position: usize,
+        total: usize,
+        input: &[f32],
+        output: &mut [f32],
+    ) {
+        let next_position = position + output.len();
+
+        if next_position <= total {
+            output.copy_from_slice(&self.buffer[position..next_position]);
+            let position = if next_position == total {
+                0
+            } else {
+                next_position
+            };
+
+            if next_position == total && self.state.is_awaiting_overdub() {
+                self.state.start_overdubbing(position);
+            } else {
+                self.state.update_position(position);
+            }
+        } else {
+            self.process_samples_wrap_around(position, total, input, output);
+        }
     }
 
     fn process_samples_wrap_around(

@@ -52,6 +52,9 @@ effects:
     toggle:
       channel: 1
       note: 60
+    overdub:
+      channel: 1
+      note: 61
 
 ```
 
