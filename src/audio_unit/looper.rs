@@ -98,10 +98,7 @@ impl Looper {
                     self.process_samples_wrap_around(position, self.buffer.len(), input, output);
                 }
             }
-            Playing { position, total } => {
-                self.process_samples_playing(position, total, input, output);
-            }
-            PlayingAwaitingOverdub { position, total } => {
+            Playing { position, total } | PlayingAwaitingOverdub { position, total } => {
                 self.process_samples_playing(position, total, input, output);
             }
             Overdubbing { position, total } => {
