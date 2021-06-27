@@ -81,15 +81,26 @@ impl State {
     }
 
     pub fn tick_measure(&mut self) {
-        if let QueueRecording = self {
-            println!("looper: Recording");
-            *self = Recording { position: 0 }
-        } else if let QueuePlaying { position } = self {
-            println!("looper: Playing");
-            *self = Playing {
-                position: 0,
-                total: *position,
+        match self {
+            QueueRecording => {
+                println!("looper: Recording");
+                *self = Recording { position: 0 }
             }
+            QueuePlaying { position } => {
+                println!("looper: Playing");
+                *self = Playing {
+                    position: 0,
+                    total: *position,
+                }
+            }
+            Playing { total, .. } /*| PlayingAwaitingOverdub { .. } | Overdubbing { .. }*/ => {
+                println!("looper: snapping to beginning");
+                *self = Playing {
+                    position: 0,
+                    total: *total,
+                };
+            }
+            _ => (),
         }
     }
 }
