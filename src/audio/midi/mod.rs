@@ -4,7 +4,7 @@ pub use message::Message;
 
 use crate::{config::MidiSlider, Result};
 use anyhow::anyhow;
-use midir::{MidiInput, MidiInputPort};
+use midir::{os::unix::VirtualInput, MidiInput, MidiInputPort};
 use num_traits::Num;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::{self, Receiver};
@@ -20,6 +20,36 @@ pub fn listen_for_input(port_name: &str) -> Result<Receiver<Message>> {
 
     let (sender, receiver) = mpsc::channel();
     handle_messages(port, sender);
+
+    Ok(receiver)
+}
+
+/// Listens on a virtual MIDI port, and sends MIDI clock messages over a channel. Returns the receiver of that channel.
+pub fn listen_for_clock() -> Result<Receiver<Message>> {
+    let midi_in = MidiInput::new("pedals").unwrap();
+
+    let (sender, receiver) = mpsc::channel();
+
+    thread::spawn(move || {
+        // _virtual_input_connection needs to be a named parameter, because it needs to be kept alive until the end of the scope
+        let _virtual_input_connection = midi_in
+            .create_virtual(
+                "pedals",
+                move |timestamp, bytes, _| {
+                    if let Some(message) = Message::from(timestamp, bytes).unwrap() {
+                        // println!("received MIDI message on virtual input: {:?}", message);
+                        if message.message == MidiMessage::TimingClock {
+                            sender.send(message).unwrap();
+                        }
+                    }
+                },
+                (),
+            )
+            .unwrap();
+
+        // keep this thread alive forever
+        thread::sleep(Duration::from_micros(u64::MAX));
+    });
 
     Ok(receiver)
 }
@@ -94,6 +124,7 @@ fn handle_messages(port: MidiInputPort, sender: Sender<Message>) {
                 "midir-read-input",
                 move |timestamp, bytes, _| {
                     if let Some(message) = Message::from(timestamp, bytes).unwrap() {
+                        // println!("received MIDI message: {:?}", message);
                         sender.send(message).unwrap();
                     }
                 },

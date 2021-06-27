@@ -29,6 +29,8 @@ pub fn run(
         None => None,
     };
 
+    let midi_clock_messages = midi::listen_for_clock();
+
     let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
         if let Err(e) = ring_buffer::write_samples(&mut producer, data) {
             eprintln!("input: {:?}", e);
@@ -36,9 +38,15 @@ pub fn run(
     };
 
     let output_data_fn = move |output: &mut [f32], _: &cpal::OutputCallbackInfo| {
-        let midi_messages = midi_messages
+        let mut midi_messages = midi_messages
             .as_ref()
             .map_or(vec![], |midi_messages| midi_messages.try_iter().collect());
+        let midi_clock_messages = midi_clock_messages
+            .as_ref()
+            .map_or(vec![], |midi_clock_messages| {
+                midi_clock_messages.try_iter().collect()
+            });
+        midi_messages.extend(midi_clock_messages);
 
         if let Err(e) = ring_buffer::read_samples(&mut consumer, output.len())
             .and_then(|frame| effect.process(&midi_messages, &frame, output))
