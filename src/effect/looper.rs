@@ -13,6 +13,7 @@ pub struct Looper {
     config: LooperConfig,
     split: audio_unit::Split,
     messages: Sender<Message>,
+    num_clock_ticks: u32,
 }
 
 impl Looper {
@@ -26,12 +27,19 @@ impl Looper {
             config,
             split,
             messages,
+            num_clock_ticks: 0,
         })
     }
 
     fn handle_midi_messages(&mut self, messages: &[midi::Message]) -> Result<()> {
         for message in messages {
             match message.message {
+                MidiMessage::TimingClock => {
+                    self.increment_clock_ticks();
+                    if self.num_clock_ticks % (24 * 4) == 0 {
+                        self.tick_measure()?;
+                    }
+                }
                 MidiMessage::NoteOn(channel, note, _)
                     if channel == self.config.toggle.channel && note == self.config.toggle.note =>
                 {
@@ -48,6 +56,14 @@ impl Looper {
         }
 
         Ok(())
+    }
+
+    fn increment_clock_ticks(&mut self) {
+        self.num_clock_ticks += 1;
+    }
+
+    fn tick_measure(&mut self) -> Result<()> {
+        Ok(self.messages.send(Message::TickMeasure)?)
     }
 
     fn toggle(&mut self) -> Result<()> {

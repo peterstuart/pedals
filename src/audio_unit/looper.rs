@@ -7,12 +7,15 @@ use State::*;
 pub enum Message {
     Toggle,
     QueueOverdub,
+    TickMeasure,
 }
 
 #[derive(Debug)]
 enum State {
     Off,
+    QueueRecording,
     Recording { position: usize },
+    QueuePlaying { position: usize },
     Playing { position: usize, total: usize },
     PlayingAwaitingOverdub { position: usize, total: usize },
     Overdubbing { position: usize, total: usize },
@@ -65,17 +68,29 @@ impl State {
         }
     }
 
-    pub fn toggle(&mut self) {
+    pub fn queue_toggle(&mut self) {
         *self = match self {
-            Off => Recording { position: 0 },
-            Recording { position } => Playing {
-                position: 0,
-                total: *position,
+            Off => QueueRecording,
+            Recording { position } => QueuePlaying {
+                position: *position,
             },
             _ => Off,
         };
 
         println!("looper: {:?}", self);
+    }
+
+    pub fn tick_measure(&mut self) {
+        if let QueueRecording = self {
+            println!("looper: Recording");
+            *self = Recording { position: 0 }
+        } else if let QueuePlaying { position } = self {
+            println!("looper: Playing");
+            *self = Playing {
+                position: 0,
+                total: *position,
+            }
+        }
     }
 }
 
@@ -111,20 +126,23 @@ impl Looper {
     fn process_message(&mut self, message: Message) {
         match message {
             Message::Toggle => {
-                self.state.toggle();
+                self.state.queue_toggle();
             }
             Message::QueueOverdub => {
                 self.state.queue_overdub();
+            }
+            Message::TickMeasure => {
+                self.state.tick_measure();
             }
         }
     }
 
     fn process_samples(&mut self, input: &[f32], output: &mut [f32]) {
         match self.state {
-            Off => {
+            Off | QueueRecording => {
                 util::zero_slice(output);
             }
-            Recording { position } => {
+            Recording { position } | QueuePlaying { position } => {
                 let next_position = position + input.len();
 
                 if next_position <= self.buffer.len() {
@@ -138,8 +156,14 @@ impl Looper {
                             total: next_position,
                         };
                     } else {
-                        self.state = Recording {
-                            position: next_position,
+                        self.state = if matches!(self.state, Recording { .. }) {
+                            Recording {
+                                position: next_position,
+                            }
+                        } else {
+                            QueuePlaying {
+                                position: next_position,
+                            }
                         };
                     }
                 } else {
