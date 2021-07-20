@@ -1,4 +1,5 @@
 mod delay;
+mod fft;
 mod looper;
 mod pipeline;
 mod tap_tempo;
@@ -6,6 +7,7 @@ mod tempo;
 mod transparent;
 
 pub use delay::Delay;
+pub use fft::Fft;
 pub use looper::Looper;
 pub use pipeline::Pipeline;
 pub use tempo::Tempo;
@@ -37,5 +39,6 @@ pub fn from(config: config::Effect, stream_config: &StreamConfig) -> Result<Boxe
         config::Effect::Transparent => Transparent::new().boxed(),
         config::Effect::Delay(delay_config) => Delay::new(delay_config, stream_config)?.boxed(),
         config::Effect::Looper(looper_config) => Looper::new(looper_config, stream_config)?.boxed(),
+        config::Effect::Fft => Fft::new().boxed(),
     })
 }
