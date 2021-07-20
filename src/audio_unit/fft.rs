@@ -3,14 +3,12 @@ use rustfft::FftPlanner;
 
 pub struct Fft {
     planner: FftPlanner<f32>,
-    inverse_planner: FftPlanner<f32>,
 }
 
 impl Fft {
     pub fn new() -> Self {
         Self {
             planner: FftPlanner::new(),
-            inverse_planner: FftPlanner::new(),
         }
     }
 }
@@ -25,7 +23,7 @@ impl AudioUnit for Fft {
             .plan_fft_forward(length)
             .process(&mut input_as_complex);
 
-        self.inverse_planner
+        self.planner
             .plan_fft_inverse(length)
             .process(&mut input_as_complex);
 
