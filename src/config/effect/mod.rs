@@ -12,4 +12,5 @@ pub enum Effect {
     Transparent,
     Delay(DelayConfig),
     Looper(LooperConfig),
+    Fft,
 }

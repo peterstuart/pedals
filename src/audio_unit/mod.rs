@@ -1,12 +1,14 @@
 pub mod delay;
 pub mod looper;
 
+mod fft;
 mod gain;
 mod pipeline;
 mod split;
 mod transparent;
 
 pub use delay::Delay;
+pub use fft::Fft;
 pub use gain::Gain;
 pub use looper::Looper;
 pub use pipeline::Pipeline;

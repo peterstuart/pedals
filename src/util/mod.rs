@@ -1,3 +1,5 @@
+pub mod number;
+
 use cpal::StreamConfig;
 
 pub fn zero_slice(data: &mut [f32]) {
