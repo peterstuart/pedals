@@ -5,7 +5,7 @@ authors = ["Peter Stuart <peter@peterstuart.org>"]
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0.42"
+anyhow = "1.0.43"
 cpal = "0.13.4"
 midir = "0.7.0"
 num-traits = "0.2.14"
