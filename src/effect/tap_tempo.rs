@@ -70,7 +70,7 @@ mod tests {
     fn assert_produces_tempo(messages: &[Message], expected_tempo: Option<Tempo>) {
         let note_on = NoteOn::new(Channel::Ch1, Note::A0);
         let mut tap_tempo = TapTempo::new(note_on);
-        let tempo = tap_tempo.handle_messages(&messages);
+        let tempo = tap_tempo.handle_messages(messages);
 
         assert_eq!(tempo, expected_tempo);
     }

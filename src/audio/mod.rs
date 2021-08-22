@@ -51,8 +51,8 @@ pub fn run(
         "Attempting to build both streams with f32 samples and {:?}.",
         config
     );
-    let input_stream = input_device.build_input_stream(&config, input_data_fn, handle_error)?;
-    let output_stream = output_device.build_output_stream(&config, output_data_fn, handle_error)?;
+    let input_stream = input_device.build_input_stream(config, input_data_fn, handle_error)?;
+    let output_stream = output_device.build_output_stream(config, output_data_fn, handle_error)?;
     println!("Successfully built streams.");
 
     println!(
@@ -74,7 +74,7 @@ pub fn devices(config: &config::Audio) -> Result<(Device, Device)> {
     let host = cpal::default_host();
 
     let input_device = match &config.input {
-        Some(name) => device(&host, &name),
+        Some(name) => device(&host, name),
         None => host
             .default_input_device()
             .ok_or_else(|| anyhow!("Failed to find input device")),
@@ -83,7 +83,7 @@ pub fn devices(config: &config::Audio) -> Result<(Device, Device)> {
     println!("Input device: {}", input_device.name()?);
 
     let output_device = match &config.output {
-        Some(name) => device(&host, &name),
+        Some(name) => device(&host, name),
         None => host
             .default_output_device()
             .ok_or_else(|| anyhow!("Failed to find output device")),
