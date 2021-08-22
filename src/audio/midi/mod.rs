@@ -74,7 +74,7 @@ fn port(name: &str) -> Result<MidiInputPort> {
     midi_input
         .ports()
         .into_iter()
-        .find(|port| midi_input.port_name(&port) == Ok(name.into()))
+        .find(|port| midi_input.port_name(port) == Ok(name.into()))
         .ok_or_else(|| {
             anyhow!(
                 "Could not find a MIDI port with name '{}'. Available ports are:\n{}",
