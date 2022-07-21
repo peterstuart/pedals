@@ -11,7 +11,7 @@ midir = "0.7.0"
 num-traits = "0.2.14"
 ringbuf = "0.2.6"
 rustfft = "6.0.1"
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0.140", features = ["derive"] }
 serde_yaml = "0.8.21"
 wmidi = "4.0.6"
 
